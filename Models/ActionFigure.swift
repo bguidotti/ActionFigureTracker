@@ -9,9 +9,21 @@ import Foundation
 
 /// The different action figure lines your son collects
 enum FigureLine: String, CaseIterable, Codable, Identifiable {
+    // DC Lines
     case dcMultiverse = "DC Multiverse"
-    case mastersOfTheUniverse = "Masters of the Universe"
+    case dcSuperPowers = "DC Super Powers"
+    case dcRetro = "DC Retro"
+    case dcDirect = "DC Direct"
+    
+    // Masters of the Universe (split into sub-lines)
+    case motuOrigins = "MOTU Origins"
+    case motuMasterverse = "MOTU Masterverse"
+    
+    // Marvel
     case marvelLegends = "Marvel Legends"
+    
+    // Star Wars
+    case starWarsBlackSeries = "Star Wars Black Series"
     
     var id: String { rawValue }
     
@@ -19,8 +31,13 @@ enum FigureLine: String, CaseIterable, Codable, Identifiable {
     var emoji: String {
         switch self {
         case .dcMultiverse: return "🦇"
-        case .mastersOfTheUniverse: return "⚔️"
+        case .dcSuperPowers: return "💪"
+        case .dcRetro: return "📼"
+        case .dcDirect: return "🎯"
+        case .motuOrigins: return "⚔️"
+        case .motuMasterverse: return "👑"
         case .marvelLegends: return "🕷️"
+        case .starWarsBlackSeries: return "⭐"
         }
     }
     
@@ -28,8 +45,13 @@ enum FigureLine: String, CaseIterable, Codable, Identifiable {
     var colorName: String {
         switch self {
         case .dcMultiverse: return "DCBlue"
-        case .mastersOfTheUniverse: return "MOTUGold"
+        case .dcSuperPowers: return "DCPower"
+        case .dcRetro: return "DCRetro"
+        case .dcDirect: return "DCDirect"
+        case .motuOrigins: return "MOTUOrigins"
+        case .motuMasterverse: return "MOTUMasterverse"
         case .marvelLegends: return "MarvelRed"
+        case .starWarsBlackSeries: return "StarWars"
         }
     }
 }

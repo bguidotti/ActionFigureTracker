@@ -43,7 +43,7 @@ class DataLoader {
     static func determineLine(from seriesString: String) -> FigureLine {
         let lower = seriesString.lowercased()
         
-        // Check for MOTU Origins first (more specific)
+        // Check for MOTU Origins first (most specific)
         if lower.contains("masters-of-the-universe-origins") || lower == "masters-of-the-universe-origins" {
             return .motuOrigins
         }

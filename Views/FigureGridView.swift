@@ -99,9 +99,21 @@ struct LinePickerView: View {
     
     private func colorForLine(_ line: FigureLine) -> Color {
         switch line {
+        // DC Lines
         case .dcMultiverse: return .blue
-        case .mastersOfTheUniverse: return .orange
+        case .dcSuperPowers: return .purple
+        case .dcRetro: return .cyan
+        case .dcDirect: return .indigo
+        
+        // MOTU Lines
+        case .motuOrigins: return .orange
+        case .motuMasterverse: return .yellow
+        
+        // Marvel
         case .marvelLegends: return .red
+        
+        // Star Wars
+        case .starWarsBlackSeries: return .black
         }
     }
 }
