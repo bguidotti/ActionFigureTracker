@@ -2,16 +2,19 @@
 //  ActionFigureTrackerApp.swift
 //  ActionFigureTracker
 //
-//  Created by guidotti on 1/25/26.
+//  Main entry point for the Action Figure Tracker app
 //
 
 import SwiftUI
 
 @main
 struct ActionFigureTrackerApp: App {
+    @StateObject private var dataStore = FigureDataStore()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(dataStore)
         }
     }
 }
