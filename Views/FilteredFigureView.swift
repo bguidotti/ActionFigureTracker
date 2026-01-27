@@ -26,9 +26,9 @@ struct FilteredFigureView: View {
     private func sortFigures(_ figures: [ActionFigure], by option: SortOption) -> [ActionFigure] {
         switch option {
         case .newestFirst:
-            return figures.sorted { $0.dateAdded > $1.dateAdded }
-        case .oldestFirst:
             return figures.sorted { $0.dateAdded < $1.dateAdded }
+        case .oldestFirst:
+            return figures.sorted { $0.dateAdded > $1.dateAdded }
         case .alphabetical:
             return figures.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         case .reverseAlphabetical:
