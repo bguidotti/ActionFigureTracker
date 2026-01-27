@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-class ImageCache: ObservableObject {
+class ImageCache {
     static let shared = ImageCache()
     
     private let cacheDirectory: URL
