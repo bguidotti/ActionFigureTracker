@@ -64,26 +64,36 @@ struct FilteredFigureView: View {
                     }
                 } else {
                     // Figure Grid
-                    ScrollView {
-                        // Count header
-                        HStack {
-                            Text("\(filteredFigures.count) figures")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 8)
-                        
-                        LazyVGrid(columns: columns, spacing: 20) {
-                            ForEach(filteredFigures) { figure in
-                                NavigationLink(destination: FigureDetailView(figure: figure)) {
-                                    FigureCardView(figure: figure)
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            // Count header
+                            HStack {
+                                Text("\(filteredFigures.count) figures")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                            .id("top")
+                            
+                            LazyVGrid(columns: columns, spacing: 20) {
+                                ForEach(filteredFigures) { figure in
+                                    NavigationLink(destination: FigureDetailView(figure: figure)) {
+                                        FigureCardView(figure: figure)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .id(figure.id)
                                 }
-                                .buttonStyle(.plain)
+                            }
+                            .padding()
+                        }
+                        .onChange(of: selectedLine) { _, _ in
+                            // Reset scroll to top when category changes
+                            withAnimation {
+                                proxy.scrollTo("top", anchor: .top)
                             }
                         }
-                        .padding()
                     }
                 }
             }

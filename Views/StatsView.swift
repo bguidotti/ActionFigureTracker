@@ -154,7 +154,7 @@ struct LineStatsCard: View {
         case .marvelLegends: return .red
         
         // Star Wars
-        case .starWarsBlackSeries: return .black
+        case .starWarsBlackSeries: return Color(red: 0.2, green: 0.2, blue: 0.3) // Dark blue-gray instead of black
         }
     }
     

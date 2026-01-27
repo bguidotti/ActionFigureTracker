@@ -12,6 +12,7 @@ struct FigureGridView: View {
     @State private var selectedLine: FigureLine? = nil
     @State private var searchText = ""
     @State private var sortOption: SortOption = .newestFirst
+    @State private var scrollProxy: ScrollViewReader?
     
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -51,16 +52,30 @@ struct FigureGridView: View {
                     .padding(.top, 8)
                 
                 // Figure Grid
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        ForEach(filteredFigures) { figure in
-                            NavigationLink(destination: FigureDetailView(figure: figure)) {
-                                FigureCardView(figure: figure)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 20) {
+                            ForEach(filteredFigures) { figure in
+                                NavigationLink(destination: FigureDetailView(figure: figure)) {
+                                    FigureCardView(figure: figure)
+                                }
+                                .buttonStyle(.plain)
+                                .id(figure.id)
                             }
-                            .buttonStyle(.plain)
+                        }
+                        .padding()
+                    }
+                    .onAppear {
+                        scrollProxy = proxy
+                    }
+                    .onChange(of: selectedLine) { _, _ in
+                        // Reset scroll to top when category changes
+                        if let firstId = filteredFigures.first?.id {
+                            withAnimation {
+                                proxy.scrollTo(firstId, anchor: .top)
+                            }
                         }
                     }
-                    .padding()
                 }
             }
             .navigationTitle("My Action Figures! 🦸")
@@ -145,7 +160,7 @@ struct LinePickerView: View {
         case .marvelLegends: return .red
         
         // Star Wars
-        case .starWarsBlackSeries: return .black
+        case .starWarsBlackSeries: return Color(red: 0.2, green: 0.2, blue: 0.3) // Dark blue-gray instead of black
         }
     }
 }
@@ -193,15 +208,28 @@ struct FigureCardView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // Figure Image
+            // Figure Image - Larger for better visibility
             ZStack(alignment: .topTrailing) {
+                // Background to help images stand out
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.gray.opacity(0.1))
+                    .frame(height: 280)
+                
                 FigureImageView(imageName: figure.imageName)
-                    .frame(height: 180)
+                    .frame(height: 280)
+                    .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 
-                // Status Badge
-                StatusBadge(status: figure.status)
-                    .padding(8)
+                // Badges overlay
+                VStack(alignment: .trailing, spacing: 4) {
+                    // Platinum badge
+                    if figure.isPlatinum {
+                        PlatinumBadge()
+                    }
+                    // Status Badge
+                    StatusBadge(status: figure.status)
+                }
+                .padding(8)
             }
             
             // Name
@@ -263,6 +291,31 @@ struct StatusBadge: View {
     }
 }
 
+// MARK: - Platinum Badge
+
+struct PlatinumBadge: View {
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "sparkles")
+                .font(.caption)
+            Text("PLATINUM")
+                .font(.system(size: 8, weight: .bold))
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.7, green: 0.7, blue: 0.9), Color(red: 0.5, green: 0.5, blue: 0.7)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+    }
+}
+
 // MARK: - Figure Image
 
 // MARK: - Figure Image (Upgraded for Web URLs)
@@ -283,7 +336,9 @@ struct FigureImageView: View {
                 case .success(let image):
                     image
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                 case .failure:
                     placeholder
                 @unknown default:
@@ -294,7 +349,9 @@ struct FigureImageView: View {
             // Fallback for local assets (if you still have any)
             Image(imageName)
                 .resizable()
-                .aspectRatio(contentMode: .fit)
+                .aspectRatio(contentMode: .fill)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
         }
     }
     

@@ -119,4 +119,19 @@ struct ActionFigure: Identifiable, Codable {
         self.isFavorite = isFavorite
         self.dateAdded = dateAdded
     }
+    
+    /// Check if this is a platinum/chase variant
+    var isPlatinum: Bool {
+        name.localizedCaseInsensitiveContains("platinum") || 
+        name.localizedCaseInsensitiveContains("chase")
+    }
+    
+    /// Get base name without variant indicators
+    var baseName: String {
+        name
+            .replacingOccurrences(of: " Platinum (Chase)", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: " Platinum", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: " (Chase)", with: "", options: .caseInsensitive)
+            .trimmingCharacters(in: .whitespaces)
+    }
 }

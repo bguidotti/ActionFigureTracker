@@ -26,33 +26,52 @@ struct FigureDetailView: View {
             VStack(spacing: 24) {
                 // Big Image
                 ZStack(alignment: .topTrailing) {
+                    // Background
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(Color.gray.opacity(0.1))
+                        .frame(height: 400)
+                    
                     FigureImageView(imageName: currentFigure.imageName)
-                        .frame(height: 350)
+                        .frame(height: 400)
+                        .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 24))
                         .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
                     
-                    // Favorite button
-                    Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                            dataStore.toggleFavorite(for: figure)
+                    // Badges overlay
+                    VStack(alignment: .trailing, spacing: 8) {
+                        // Platinum badge
+                        if currentFigure.isPlatinum {
+                            PlatinumBadge()
                         }
-                    }) {
-                        Image(systemName: currentFigure.isFavorite ? "heart.fill" : "heart")
-                            .font(.title)
-                            .foregroundStyle(currentFigure.isFavorite ? .red : .gray)
-                            .padding(16)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
+                        // Favorite button
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                dataStore.toggleFavorite(for: figure)
+                            }
+                        }) {
+                            Image(systemName: currentFigure.isFavorite ? "heart.fill" : "heart")
+                                .font(.title)
+                                .foregroundStyle(currentFigure.isFavorite ? .red : .gray)
+                                .padding(16)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                        }
                     }
                     .padding()
                 }
                 
                 // Name and Line
                 VStack(spacing: 8) {
-                    Text(currentFigure.name)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 4) {
+                        Text(currentFigure.name)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .multilineTextAlignment(.center)
+                        
+                        if currentFigure.isPlatinum {
+                            PlatinumBadge()
+                        }
+                    }
                     
                     HStack {
                         Text(currentFigure.line.emoji)
