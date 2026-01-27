@@ -316,28 +316,29 @@ struct PlatinumBadge: View {
 
 struct FigureImageView: View {
     let imageName: String
+    @StateObject private var imageLoader = CachedImageLoader()
     
     var body: some View {
         // Check if it's a web URL or a local asset
-        if imageName.hasPrefix("http") {
-            AsyncImage(url: URL(string: imageName)) { phase in
-                switch phase {
-                case .empty:
-                    ZStack {
-                        Color.gray.opacity(0.1)
-                        ProgressView() // Spinner while loading
-                    }
-                case .success(let image):
-                    image
+        if imageName.hasPrefix("http"), let url = URL(string: imageName) {
+            Group {
+                if let image = imageLoader.image {
+                    Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxWidth: .infinity)
                         .frame(maxHeight: .infinity)
-                case .failure:
-                    placeholder
-                @unknown default:
+                } else if imageLoader.isLoading {
+                    ZStack {
+                        Color.gray.opacity(0.1)
+                        ProgressView() // Spinner while loading
+                    }
+                } else {
                     placeholder
                 }
+            }
+            .onAppear {
+                imageLoader.load(url: url)
             }
         } else {
             // Fallback for local assets (if you still have any)
@@ -356,6 +357,33 @@ struct FigureImageView: View {
             Image(systemName: "photo")
                 .font(.largeTitle)
                 .foregroundStyle(.gray.opacity(0.5))
+        }
+    }
+}
+
+// MARK: - Cached Image Loader
+
+class CachedImageLoader: ObservableObject {
+    @Published var image: UIImage?
+    @Published var isLoading = false
+    
+    private var currentURL: URL?
+    
+    func load(url: URL) {
+        // Don't reload if already loading this URL
+        guard currentURL != url else { return }
+        currentURL = url
+        
+        isLoading = true
+        
+        Task {
+            // Try to get from cache (or download and cache)
+            let cachedImage = await ImageCache.shared.getImage(url: url)
+            
+            await MainActor.run {
+                self.image = cachedImage
+                self.isLoading = false
+            }
         }
     }
 }
