@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct FigureGridView: View {
     @EnvironmentObject var dataStore: FigureDataStore
