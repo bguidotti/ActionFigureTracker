@@ -12,7 +12,6 @@ struct FigureGridView: View {
     @State private var selectedLine: FigureLine? = nil
     @State private var searchText = ""
     @State private var sortOption: SortOption = .newestFirst
-    @State private var scrollProxy: ScrollViewReader?
     
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -64,16 +63,12 @@ struct FigureGridView: View {
                             }
                         }
                         .padding()
-                    }
-                    .onAppear {
-                        scrollProxy = proxy
+                        .id("top") // Add ID to top of content for scrolling
                     }
                     .onChange(of: selectedLine) { _, _ in
                         // Reset scroll to top when category changes
-                        if let firstId = filteredFigures.first?.id {
-                            withAnimation {
-                                proxy.scrollTo(firstId, anchor: .top)
-                            }
+                        withAnimation {
+                            proxy.scrollTo("top", anchor: .top)
                         }
                     }
                 }
