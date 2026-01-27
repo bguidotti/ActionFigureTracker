@@ -11,6 +11,7 @@ struct FilteredFigureView: View {
     @EnvironmentObject var dataStore: FigureDataStore
     let filterStatus: CollectionStatus
     @State private var selectedLine: FigureLine? = nil
+    @State private var sortOption: SortOption = .newestFirst
     
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -18,7 +19,21 @@ struct FilteredFigureView: View {
     ]
     
     var filteredFigures: [ActionFigure] {
-        dataStore.figures(for: selectedLine, status: filterStatus)
+        let figures = dataStore.figures(for: selectedLine, status: filterStatus)
+        return sortFigures(figures, by: sortOption)
+    }
+    
+    private func sortFigures(_ figures: [ActionFigure], by option: SortOption) -> [ActionFigure] {
+        switch option {
+        case .newestFirst:
+            return figures.sorted { $0.dateAdded > $1.dateAdded }
+        case .oldestFirst:
+            return figures.sorted { $0.dateAdded < $1.dateAdded }
+        case .alphabetical:
+            return figures.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        case .reverseAlphabetical:
+            return figures.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedDescending }
+        }
     }
     
     var title: String {
@@ -73,6 +88,22 @@ struct FilteredFigureView: View {
                 }
             }
             .navigationTitle(title)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Picker("Sort", selection: $sortOption) {
+                            ForEach(SortOption.allCases, id: \.self) { option in
+                                Label(option.rawValue, systemImage: option.icon)
+                                    .tag(option)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down.circle")
+                            .font(.title2)
+                            .foregroundStyle(.purple)
+                    }
+                }
+            }
         }
     }
 }

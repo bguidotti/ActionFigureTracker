@@ -46,7 +46,8 @@ class FigureDataStore: ObservableObject {
             result = result.filter { $0.status == status }
         }
         
-        return result.sorted { $0.name < $1.name }
+        // Don't sort here - let the views handle sorting based on user preference
+        return result
     }
     
     func favorites() -> [ActionFigure] {

@@ -69,6 +69,23 @@ enum CollectionStatus: String, Codable, CaseIterable {
     }
 }
 
+/// Sort options for figure lists
+enum SortOption: String, CaseIterable {
+    case newestFirst = "Newest First"
+    case oldestFirst = "Oldest First"
+    case alphabetical = "A-Z"
+    case reverseAlphabetical = "Z-A"
+    
+    var icon: String {
+        switch self {
+        case .newestFirst: return "arrow.down.circle"
+        case .oldestFirst: return "arrow.up.circle"
+        case .alphabetical: return "textformat.abc"
+        case .reverseAlphabetical: return "textformat.abc.dottedunderline"
+        }
+    }
+}
+
 /// Main action figure model
 struct ActionFigure: Identifiable, Codable {
     let id: UUID
