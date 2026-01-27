@@ -38,13 +38,10 @@ class iCloudPersistence {
         }
         
         do {
-            try data.write(to: documentsURL, options: [.atomic, .completeFileProtection])
-            print("✅ Saved to Documents: \(documentsURL.path)")
-            
-            // Mark file to be backed up to iCloud (if iCloud Backup is enabled)
-            var resourceValues = URLResourceValues()
-            resourceValues.isExcludedFromBackup = false
-            try? documentsURL.setResourceValues(resourceValues)
+            let url = documentsURL
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            print("✅ Saved to Documents: \(url.path)")
+            // File is automatically included in iCloud Backup if enabled
         } catch {
             print("❌ Failed to save: \(error.localizedDescription)")
         }
