@@ -32,9 +32,9 @@ struct FigureGridView: View {
     private func sortFigures(_ figures: [ActionFigure], by option: SortOption) -> [ActionFigure] {
         switch option {
         case .newestFirst:
-            return figures.sorted { $0.dateAdded < $1.dateAdded }
+            return figures.sorted { $0.dateAdded > $1.dateAdded } // Newest first (descending)
         case .oldestFirst:
-            return figures.sorted { $0.dateAdded > $1.dateAdded }
+            return figures.sorted { $0.dateAdded < $1.dateAdded } // Oldest first (ascending)
         case .alphabetical:
             return figures.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         case .reverseAlphabetical:
