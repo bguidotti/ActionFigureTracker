@@ -202,16 +202,16 @@ struct FigureCardView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // Figure Image - Larger for better visibility
+            // Figure Image - Larger for better visibility, respects aspect ratio
             ZStack(alignment: .topTrailing) {
                 // Background to help images stand out
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.gray.opacity(0.1))
-                    .frame(height: 280)
+                    .frame(minHeight: 300)
                 
                 FigureImageView(imageName: figure.imageName)
-                    .frame(height: 280)
                     .frame(maxWidth: .infinity)
+                    .frame(minHeight: 300)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 
                 // Badges overlay
@@ -330,9 +330,9 @@ struct FigureImageView: View {
                 case .success(let image):
                     image
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                        .frame(maxHeight: .infinity)
                 case .failure:
                     placeholder
                 @unknown default:
@@ -343,9 +343,9 @@ struct FigureImageView: View {
             // Fallback for local assets (if you still have any)
             Image(imageName)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .frame(maxHeight: .infinity)
         }
     }
     

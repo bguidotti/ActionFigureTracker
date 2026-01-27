@@ -29,11 +29,11 @@ struct FigureDetailView: View {
                     // Background
                     RoundedRectangle(cornerRadius: 24)
                         .fill(Color.gray.opacity(0.1))
-                        .frame(height: 400)
+                        .frame(minHeight: 400)
                     
                     FigureImageView(imageName: currentFigure.imageName)
-                        .frame(height: 400)
                         .frame(maxWidth: .infinity)
+                        .frame(minHeight: 400)
                         .clipShape(RoundedRectangle(cornerRadius: 24))
                         .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
                     
