@@ -14,7 +14,6 @@ struct FilteredFigureView: View {
     @State private var sortOption: SortOption = .newestFirst
     
     private let columns = [
-        GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
     ]
     
