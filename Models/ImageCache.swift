@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftUI
+import UIKit
 
 class ImageCache: ObservableObject {
     static let shared = ImageCache()
