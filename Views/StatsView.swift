@@ -28,6 +28,9 @@ struct StatsView: View {
                         FavoritesSection(favorites: dataStore.favorites())
                     }
                     
+                    // iCloud Status
+                    iCloudStatusCard()
+                    
                     // Reset button (hidden at bottom)
                     Button(action: { showingReset = true }) {
                         Text("Reset to Sample Data")
@@ -222,6 +225,46 @@ struct FavoritesSection: View {
                         .frame(width: 90)
                     }
                 }
+            }
+        }
+        .padding(20)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+    }
+}
+
+// MARK: - iCloud Status Card
+
+struct iCloudStatusCard: View {
+    @State private var storageLocation = iCloudPersistence.shared.storageLocation
+    @State private var isiCloudAvailable = iCloudPersistence.shared.isiCloudAvailable
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: isiCloudAvailable ? "icloud.fill" : "icloud.slash.fill")
+                    .font(.title2)
+                    .foregroundStyle(isiCloudAvailable ? .blue : .gray)
+                Text("Data Storage")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                Spacer()
+            }
+            
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Status:")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(storageLocation)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(isiCloudAvailable ? .blue : .orange)
+                }
+                
+                Text("Your collection is saved in the app's Documents folder. If you have iCloud Backup enabled, it will be automatically backed up and restored when you reinstall the app.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(20)

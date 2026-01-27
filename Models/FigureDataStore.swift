@@ -12,17 +12,15 @@ import Combine
 class FigureDataStore: ObservableObject {
     @Published var figures: [ActionFigure] = []
     
-    private let saveKey = "SavedFigures"
-    
     init() {
-            loadFigures()
-            
-            // If no saved data, load from the JSON file
-            if figures.isEmpty {
-                figures = DataLoader.loadFigures() // <--- CHANGED THIS LINE
-                saveFigures()
-            }
+        loadFigures()
+        
+        // If no saved data, load from the JSON file
+        if figures.isEmpty {
+            figures = DataLoader.loadFigures()
+            saveFigures()
         }
+    }
     
     // MARK: - Filtering
     
@@ -104,22 +102,34 @@ class FigureDataStore: ObservableObject {
     // MARK: - Persistence
     
     private func saveFigures() {
-        if let encoded = try? JSONEncoder().encode(figures) {
-            UserDefaults.standard.set(encoded, forKey: saveKey)
-        }
+        // Save to iCloud (with local fallback)
+        iCloudPersistence.shared.save(figures)
     }
     
     private func loadFigures() {
-        if let data = UserDefaults.standard.data(forKey: saveKey),
-           let decoded = try? JSONDecoder().decode([ActionFigure].self, from: data) {
-            figures = decoded
+        // Try to load from iCloud/local storage
+        if let savedFigures = iCloudPersistence.shared.load() {
+            figures = savedFigures
         }
     }
     
     /// Reset to mock data (useful for testing)
     /// Reset to data from JSON file
     func resetToMockData() {
-        figures = DataLoader.loadFigures() // <--- CHANGED THIS LINE
+        figures = DataLoader.loadFigures()
         saveFigures()
+    }
+    
+    /// Manually sync from iCloud (useful if data changed on another device)
+    func syncFromiCloud() {
+        loadFigures()
+    }
+    
+    /// Get iCloud status info
+    var iCloudStatus: (isAvailable: Bool, location: String) {
+        (
+            isAvailable: iCloudPersistence.shared.isiCloudAvailable,
+            location: iCloudPersistence.shared.storageLocation
+        )
     }
 }
