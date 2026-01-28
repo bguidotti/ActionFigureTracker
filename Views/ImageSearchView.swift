@@ -125,11 +125,14 @@ struct ImageSearchView: View {
                 .environmentObject(dataStore)
             }
             .onAppear {
-                // Pre-fill search with figure name
+                // Pre-fill search with figure name and auto-search
                 searchQuery = figure.name
                     .replacingOccurrences(of: "(", with: "")
                     .replacingOccurrences(of: ")", with: "")
                     .trimmingCharacters(in: .whitespaces)
+                
+                // Automatically search on appear
+                performSearch()
             }
         }
     }
@@ -499,6 +502,99 @@ struct ImageResultCard: View {
     }
 }
 
+// MARK: - Reliable Image Loader (Apple recommended URLSession pattern)
+
+@MainActor
+class PreviewImageLoader: ObservableObject {
+    @Published var image: UIImage?
+    @Published var isLoading = false
+    @Published var error: String?
+    
+    private var currentTask: Task<Void, Never>?
+    
+    func load(urlString: String) {
+        // Cancel any existing load
+        currentTask?.cancel()
+        
+        guard let url = URL(string: urlString) else {
+            error = "Invalid URL"
+            return
+        }
+        
+        isLoading = true
+        error = nil
+        image = nil
+        
+        currentTask = Task {
+            do {
+                // Use Apple's recommended URLSession.shared.data pattern
+                var request = URLRequest(url: url)
+                request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
+                request.cachePolicy = .reloadIgnoringLocalCacheData  // Fresh load every time
+                request.timeoutInterval = 20
+                
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                guard !Task.isCancelled else { return }
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    self.error = "Invalid response"
+                    self.isLoading = false
+                    return
+                }
+                
+                guard httpResponse.statusCode == 200 else {
+                    self.error = "HTTP \(httpResponse.statusCode)"
+                    self.isLoading = false
+                    return
+                }
+                
+                // Decode image off main thread using preparingForDisplay (Apple recommended)
+                guard let rawImage = UIImage(data: data) else {
+                    self.error = "Invalid image data"
+                    self.isLoading = false
+                    return
+                }
+                
+                // preparingForDisplay() decodes the image on a background thread
+                // and returns a version optimized for display
+                let displayImage = await rawImage.byPreparingForDisplay()
+                
+                guard !Task.isCancelled else { return }
+                
+                self.image = displayImage ?? rawImage
+                self.isLoading = false
+                
+            } catch is CancellationError {
+                // Task was cancelled, don't update state
+                return
+            } catch let urlError as URLError {
+                guard !Task.isCancelled else { return }
+                switch urlError.code {
+                case .timedOut:
+                    self.error = "Request timed out"
+                case .notConnectedToInternet:
+                    self.error = "No internet connection"
+                case .cancelled:
+                    return
+                default:
+                    self.error = urlError.localizedDescription
+                }
+                self.isLoading = false
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.error = error.localizedDescription
+                self.isLoading = false
+            }
+        }
+    }
+    
+    func cancel() {
+        currentTask?.cancel()
+        currentTask = nil
+    }
+}
+
 // MARK: - Image Preview Sheet
 
 struct ImagePreviewSheet: View {
@@ -506,9 +602,7 @@ struct ImagePreviewSheet: View {
     let onConfirm: () -> Void
     let onCancel: () -> Void
     
-    // Delay loading to let sheet fully present
-    @State private var isReady = false
-    @State private var loadAttempt = 0
+    @StateObject private var imageLoader = PreviewImageLoader()
     
     var body: some View {
         NavigationStack {
@@ -516,59 +610,46 @@ struct ImagePreviewSheet: View {
                 CollectorTheme.background.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    // Large preview - only load after sheet is ready
-                    if isReady {
-                        AsyncImage(url: URL(string: imageResult.url)) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                            case .failure(let error):
-                                VStack(spacing: 8) {
-                                    Image(systemName: "exclamationmark.triangle")
-                                        .font(.largeTitle)
-                                        .foregroundStyle(.red)
-                                    Text("Failed to load image")
-                                        .foregroundStyle(CollectorTheme.textSecondary)
-                                    
-                                    // Retry button
-                                    Button("Retry") {
-                                        loadAttempt += 1
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .tint(CollectorTheme.accentGold)
-                                }
-                            case .empty:
-                                VStack(spacing: 12) {
-                                    ProgressView()
-                                        .scaleEffect(1.5)
-                                    Text("Loading image...")
-                                        .font(.caption)
-                                        .foregroundStyle(CollectorTheme.textSecondary)
-                                }
-                            @unknown default:
-                                EmptyView()
+                    // Large preview using reliable loader
+                    Group {
+                        if let uiImage = imageLoader.image {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        } else if imageLoader.isLoading {
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                Text("Loading image...")
+                                    .font(.caption)
+                                    .foregroundStyle(CollectorTheme.textSecondary)
                             }
-                        }
-                        .id(loadAttempt) // Force reload on retry
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: 350)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .padding(.horizontal)
-                    } else {
-                        // Placeholder while waiting for sheet to present
-                        VStack(spacing: 12) {
+                        } else if let error = imageLoader.error {
+                            VStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.red)
+                                Text("Failed to load")
+                                    .foregroundStyle(CollectorTheme.textSecondary)
+                                Text(error)
+                                    .font(.caption2)
+                                    .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
+                                
+                                Button("Retry") {
+                                    imageLoader.load(urlString: imageResult.url)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(CollectorTheme.accentGold)
+                            }
+                        } else {
+                            // Initial state - loading triggered by onAppear
                             ProgressView()
-                                .scaleEffect(1.5)
-                            Text("Preparing...")
-                                .font(.caption)
-                                .foregroundStyle(CollectorTheme.textSecondary)
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: 350)
-                        .padding(.horizontal)
                     }
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 350)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal)
                     
                     // Info
                     VStack(spacing: 8) {
@@ -618,11 +699,12 @@ struct ImagePreviewSheet: View {
             .navigationTitle("Preview")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                // Delay image loading to let sheet fully present
-                // This fixes the black screen issue
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    isReady = true
-                }
+                // Start loading immediately - PreviewImageLoader handles everything
+                imageLoader.load(urlString: imageResult.url)
+            }
+            .onDisappear {
+                // Cancel load if user dismisses
+                imageLoader.cancel()
             }
         }
     }
