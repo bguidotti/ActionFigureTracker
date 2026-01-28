@@ -437,6 +437,13 @@ struct FigureImageView: View {
             .onAppear {
                 imageLoader.load(url: url)
             }
+            .onChange(of: imageName) { oldValue, newValue in
+                // URL changed - reload with new URL
+                if let newURL = URL(string: newValue), newValue.hasPrefix("http") {
+                    imageLoader.reset()
+                    imageLoader.load(url: newURL)
+                }
+            }
         } else {
             // Fallback for local assets (if you still have any)
             Image(imageName)
@@ -473,14 +480,26 @@ class CachedImageLoader: ObservableObject {
     
     private var currentURL: URL?
     
-    func load(url: URL) {
-        // Don't reload if already loading this URL
-        guard currentURL != url else { return }
-        currentURL = url
+    func load(url: URL, forceRefresh: Bool = false) {
+        // Don't reload if already loading this URL (unless forcing)
+        if !forceRefresh && currentURL == url && image != nil {
+            return
+        }
         
+        // If URL changed, reset state
+        if currentURL != url {
+            image = nil
+        }
+        
+        currentURL = url
         isLoading = true
         
         Task {
+            // If force refresh, invalidate the old cached image first
+            if forceRefresh {
+                ImageCache.shared.invalidate(url: url)
+            }
+            
             // Try to get from cache (or download and cache)
             let cachedImage = await ImageCache.shared.getImage(url: url)
             
@@ -489,6 +508,12 @@ class CachedImageLoader: ObservableObject {
                 self.isLoading = false
             }
         }
+    }
+    
+    func reset() {
+        image = nil
+        currentURL = nil
+        isLoading = false
     }
 }
 

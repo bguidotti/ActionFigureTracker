@@ -121,6 +121,19 @@ class ImageCache {
         return "\(abs(hash))_\(sanitized).jpg"
     }
     
+    /// Remove a specific image from cache (used when user changes an image)
+    func invalidate(url: URL) {
+        let cacheKey = url.absoluteString
+        
+        // Remove from memory cache
+        memoryCache.removeValue(forKey: cacheKey)
+        
+        // Remove from disk cache
+        let fileName = sanitizeFileName(cacheKey)
+        let fileURL = cacheDirectory.appendingPathComponent(fileName)
+        try? fileManager.removeItem(at: fileURL)
+    }
+    
     /// Clear all cached images (useful for debugging or if cache gets too large)
     func clearCache() {
         memoryCache.removeAll()

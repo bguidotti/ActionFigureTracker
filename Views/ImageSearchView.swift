@@ -2,10 +2,38 @@
 //  ImageSearchView.swift
 //  ActionFigureTracker
 //
-//  Image picker with multiple source options - like Plex Posters
+//  Image picker with search from multiple sources - like Plex Posters
 //
 
 import SwiftUI
+
+// MARK: - API Response Models
+
+struct ImageSearchResponse: Codable {
+    let query: String
+    let count: Int
+    let results: [ImageResult]
+}
+
+struct ImageResult: Codable, Identifiable {
+    var id: String { url }
+    let url: String
+    let title: String
+    let source: String
+    let source_icon: String
+    
+    var sourceColor: Color {
+        switch source {
+        case "ActionFigure411": return .orange
+        case "LegendsVerse": return .blue
+        case "McFarlane": return .green
+        case "Google": return .red
+        default: return .gray
+        }
+    }
+}
+
+// MARK: - Image Search View
 
 struct ImageSearchView: View {
     @EnvironmentObject var dataStore: FigureDataStore
@@ -13,87 +41,699 @@ struct ImageSearchView: View {
     
     let figure: ActionFigure
     
-    @State private var imageURL: String = ""
-    @State private var isValidURL: Bool = false
-    @State private var showingPreview: Bool = false
-    @State private var previewImageURL: String = ""
+    // Configuration - Change this to your server's address
+    private let apiBaseURL = "http://192.168.1.39:5050"  // Your local IP
+    
+    @State private var searchQuery: String = ""
     @State private var searchResults: [ImageResult] = []
     @State private var isSearching: Bool = false
-    @State private var selectedSource: ImageSource = .actionfigure411
     @State private var errorMessage: String?
+    @State private var selectedImage: ImageResult?
+    @State private var showingPreview: Bool = false
     
-    enum ImageSource: String, CaseIterable {
-        case actionfigure411 = "ActionFigure411"
-        case legendsverse = "LegendsVerse"
-        case mcfarlane = "McFarlane"
-        case google = "Google Images"
-        
-        var icon: String {
-            switch self {
-            case .actionfigure411: return "star.fill"
-            case .legendsverse: return "globe"
-            case .mcfarlane: return "building.2"
-            case .google: return "magnifyingglass"
-            }
-        }
-        
-        var color: Color {
-            switch self {
-            case .actionfigure411: return .orange
-            case .legendsverse: return .blue
-            case .mcfarlane: return .green
-            case .google: return .red
-            }
-        }
-        
-        func searchURL(for figureName: String) -> URL? {
-            let encoded = figureName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? figureName
-            switch self {
-            case .actionfigure411:
-                return URL(string: "https://www.actionfigure411.com/?s=\(encoded)")
-            case .legendsverse:
-                return URL(string: "https://legendsverse.com/?s=\(encoded)")
-            case .mcfarlane:
-                return URL(string: "https://mcfarlane.com/search/?q=\(encoded)")
-            case .google:
-                return URL(string: "https://www.google.com/search?tbm=isch&q=\(encoded)+action+figure")
-            }
-        }
-    }
+    // Source filters
+    @State private var enabledSources: Set<String> = ["ActionFigure411", "LegendsVerse", "McFarlane", "Google"]
     
-    struct ImageResult: Identifiable {
-        let id = UUID()
-        let url: String
-        let source: ImageSource
-    }
+    // Manual URL fallback
+    @State private var showManualEntry: Bool = false
+    @State private var manualURL: String = ""
     
     var body: some View {
         NavigationStack {
             ZStack {
                 CollectorTheme.background.ignoresSafeArea()
                 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Current Image Section
-                        currentImageSection
-                        
-                        // Quick Search Sources
-                        quickSearchSection
-                        
-                        // Manual URL Entry
-                        manualURLSection
-                        
-                        // Preview Section
-                        if showingPreview {
-                            previewSection
-                        }
-                        
-                        Spacer(minLength: 50)
+                VStack(spacing: 0) {
+                    // Search Header
+                    searchHeader
+                    
+                    // Source Filters
+                    sourceFilters
+                    
+                    // Results or States
+                    if isSearching {
+                        loadingView
+                    } else if let error = errorMessage {
+                        errorView(message: error)
+                    } else if searchResults.isEmpty {
+                        emptyStateView
+                    } else {
+                        resultsGrid
                     }
-                    .padding()
                 }
             }
-            .navigationTitle("Change Image")
+            .navigationTitle("Find Image")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundStyle(CollectorTheme.textSecondary)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showManualEntry.toggle()
+                    } label: {
+                        Image(systemName: "link.badge.plus")
+                            .foregroundStyle(CollectorTheme.accentGold)
+                    }
+                }
+            }
+            .sheet(isPresented: $showingPreview) {
+                if let selected = selectedImage {
+                    ImagePreviewSheet(
+                        imageResult: selected,
+                        onConfirm: {
+                            saveImage(url: selected.url)
+                        },
+                        onCancel: {
+                            showingPreview = false
+                            selectedImage = nil
+                        }
+                    )
+                }
+            }
+            .sheet(isPresented: $showManualEntry) {
+                ManualURLSheet(
+                    figure: figure,
+                    onSave: { url in
+                        saveImage(url: url)
+                    }
+                )
+                .environmentObject(dataStore)
+            }
+            .onAppear {
+                // Pre-fill search with figure name
+                searchQuery = figure.name
+                    .replacingOccurrences(of: "(", with: "")
+                    .replacingOccurrences(of: ")", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+            }
+        }
+    }
+    
+    // MARK: - Search Header
+    
+    private var searchHeader: some View {
+        VStack(spacing: 12) {
+            // Figure info
+            HStack(spacing: 12) {
+                AsyncImage(url: URL(string: figure.imageName)) { phase in
+                    if let image = phase.image {
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } else {
+                        CollectorTheme.surfaceBackground
+                    }
+                }
+                .frame(width: 50, height: 70)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(figure.name)
+                        .font(.system(.subheadline, design: .default, weight: .semibold))
+                        .foregroundStyle(CollectorTheme.textPrimary)
+                        .lineLimit(2)
+                    
+                    Text(figure.line.rawValue)
+                        .font(.caption)
+                        .foregroundStyle(CollectorTheme.textSecondary)
+                }
+                
+                Spacer()
+            }
+            .padding(.horizontal)
+            
+            // Search field
+            HStack(spacing: 12) {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(CollectorTheme.textSecondary)
+                    
+                    TextField("Search for images...", text: $searchQuery)
+                        .foregroundStyle(CollectorTheme.textPrimary)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onSubmit {
+                            performSearch()
+                        }
+                    
+                    if !searchQuery.isEmpty {
+                        Button {
+                            searchQuery = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(CollectorTheme.textSecondary)
+                        }
+                    }
+                }
+                .padding(12)
+                .background(CollectorTheme.surfaceBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                Button {
+                    performSearch()
+                } label: {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(CollectorTheme.accentGold)
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical, 12)
+        .background(CollectorTheme.cardBackground)
+    }
+    
+    // MARK: - Source Filters
+    
+    private var sourceFilters: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(["ActionFigure411", "LegendsVerse", "McFarlane", "Google"], id: \.self) { source in
+                    SourceFilterChip(
+                        name: source,
+                        isEnabled: enabledSources.contains(source),
+                        color: colorForSource(source)
+                    ) {
+                        if enabledSources.contains(source) {
+                            enabledSources.remove(source)
+                        } else {
+                            enabledSources.insert(source)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+        .background(CollectorTheme.cardBackground.opacity(0.5))
+    }
+    
+    // MARK: - Results Grid
+    
+    private var resultsGrid: some View {
+        ScrollView {
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 12) {
+                ForEach(searchResults) { result in
+                    ImageResultCard(result: result) {
+                        selectedImage = result
+                        showingPreview = true
+                    }
+                }
+            }
+            .padding()
+        }
+    }
+    
+    // MARK: - State Views
+    
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            ProgressView()
+                .scaleEffect(1.5)
+                .tint(CollectorTheme.accentGold)
+            Text("Searching...")
+                .font(.subheadline)
+                .foregroundStyle(CollectorTheme.textSecondary)
+            Spacer()
+        }
+    }
+    
+    private func errorView(message: String) -> some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 48))
+                .foregroundStyle(.orange)
+            
+            Text("Search Error")
+                .font(.headline)
+                .foregroundStyle(CollectorTheme.textPrimary)
+            
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(CollectorTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            
+            Button("Try Again") {
+                performSearch()
+            }
+            .buttonStyle(.bordered)
+            .tint(CollectorTheme.accentGold)
+            
+            Spacer()
+        }
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.system(size: 48))
+                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.5))
+            
+            Text("Search for Images")
+                .font(.headline)
+                .foregroundStyle(CollectorTheme.textPrimary)
+            
+            Text("Enter a search term and tap the arrow to find images from action figure websites")
+                .font(.subheadline)
+                .foregroundStyle(CollectorTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            
+            // Quick search button
+            Button {
+                performSearch()
+            } label: {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                    Text("Search \"\(figure.name.prefix(20))...\"")
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(CollectorTheme.accentGold.opacity(0.2))
+                .foregroundStyle(CollectorTheme.accentGold)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            
+            Spacer()
+        }
+    }
+    
+    // MARK: - Helpers
+    
+    private func colorForSource(_ source: String) -> Color {
+        switch source {
+        case "ActionFigure411": return .orange
+        case "LegendsVerse": return .blue
+        case "McFarlane": return .green
+        case "Google": return .red
+        default: return .gray
+        }
+    }
+    
+    private func performSearch() {
+        guard !searchQuery.isEmpty else { return }
+        
+        isSearching = true
+        errorMessage = nil
+        searchResults = []
+        
+        // Build sources parameter
+        let sources = enabledSources.map { $0.lowercased().replacingOccurrences(of: " ", with: "") }.joined(separator: ",")
+        
+        guard let encodedQuery = searchQuery.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(apiBaseURL)/api/search?q=\(encodedQuery)&sources=\(sources)") else {
+            errorMessage = "Invalid search query"
+            isSearching = false
+            return
+        }
+        
+        Task {
+            do {
+                let (data, response) = try await URLSession.shared.data(from: url)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw URLError(.badServerResponse)
+                }
+                
+                if httpResponse.statusCode == 200 {
+                    let searchResponse = try JSONDecoder().decode(ImageSearchResponse.self, from: data)
+                    
+                    await MainActor.run {
+                        searchResults = searchResponse.results
+                        isSearching = false
+                    }
+                } else {
+                    throw URLError(.badServerResponse)
+                }
+            } catch {
+                await MainActor.run {
+                    if (error as NSError).domain == NSURLErrorDomain && (error as NSError).code == -1004 {
+                        errorMessage = "Cannot connect to image server.\n\nMake sure the ImageServer is running:\ncd ImageServer && python app.py"
+                    } else {
+                        errorMessage = "Failed to search: \(error.localizedDescription)"
+                    }
+                    isSearching = false
+                }
+            }
+        }
+    }
+    
+    private func saveImage(url: String) {
+        // Invalidate old cached image
+        if let oldURL = URL(string: figure.imageName) {
+            ImageCache.shared.invalidate(url: oldURL)
+        }
+        
+        dataStore.updateImage(for: figure, imageURL: url)
+        dismiss()
+    }
+}
+
+// MARK: - Source Filter Chip
+
+struct SourceFilterChip: View {
+    let name: String
+    let isEnabled: Bool
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(isEnabled ? color : CollectorTheme.textSecondary.opacity(0.3))
+                    .frame(width: 8, height: 8)
+                
+                Text(name)
+                    .font(.system(.caption, design: .default, weight: .medium))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isEnabled ? color.opacity(0.15) : CollectorTheme.surfaceBackground)
+            .foregroundStyle(isEnabled ? color : CollectorTheme.textSecondary)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(isEnabled ? color.opacity(0.3) : CollectorTheme.cardStrokeColor, lineWidth: 1)
+            )
+        }
+    }
+}
+
+// MARK: - Image Result Card
+
+struct ImageResultCard: View {
+    let result: ImageResult
+    let onSelect: () -> Void
+    
+    @State private var isLoaded = false
+    
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 0) {
+                // Image
+                AsyncImage(url: URL(string: result.url)) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .onAppear { isLoaded = true }
+                    case .failure:
+                        ZStack {
+                            CollectorTheme.surfaceBackground
+                            Image(systemName: "photo.badge.exclamationmark")
+                                .font(.title2)
+                                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.5))
+                        }
+                    case .empty:
+                        ZStack {
+                            CollectorTheme.surfaceBackground
+                            ProgressView()
+                                .tint(CollectorTheme.textSecondary)
+                        }
+                    @unknown default:
+                        CollectorTheme.surfaceBackground
+                    }
+                }
+                .frame(height: 140)
+                .clipped()
+                
+                // Source badge
+                HStack {
+                    Circle()
+                        .fill(result.sourceColor)
+                        .frame(width: 6, height: 6)
+                    
+                    Text(result.source)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(CollectorTheme.textSecondary)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(CollectorTheme.cardBackground)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Image Preview Sheet
+
+struct ImagePreviewSheet: View {
+    let imageResult: ImageResult
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                CollectorTheme.background.ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    // Large preview
+                    AsyncImage(url: URL(string: imageResult.url)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        case .failure:
+                            VStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.red)
+                                Text("Failed to load image")
+                                    .foregroundStyle(CollectorTheme.textSecondary)
+                            }
+                        case .empty:
+                            ProgressView()
+                                .scaleEffect(1.5)
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 350)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal)
+                    
+                    // Info
+                    VStack(spacing: 8) {
+                        HStack {
+                            Circle()
+                                .fill(imageResult.sourceColor)
+                                .frame(width: 10, height: 10)
+                            Text("From \(imageResult.source)")
+                                .font(.subheadline)
+                                .foregroundStyle(CollectorTheme.textSecondary)
+                        }
+                        
+                        Text(imageResult.title)
+                            .font(.caption)
+                            .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    Spacer()
+                    
+                    // Buttons
+                    VStack(spacing: 12) {
+                        Button(action: onConfirm) {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text("Use This Image")
+                            }
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .foregroundStyle(.white)
+                            .background(CollectorTheme.statusHave)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        
+                        Button(action: onCancel) {
+                            Text("Choose Different Image")
+                                .font(.subheadline)
+                                .foregroundStyle(CollectorTheme.textSecondary)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                }
+            }
+            .navigationTitle("Preview")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+// MARK: - Manual URL Sheet
+
+struct ManualURLSheet: View {
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var dataStore: FigureDataStore
+    
+    let figure: ActionFigure
+    let onSave: (String) -> Void
+    
+    @State private var urlText: String = ""
+    @State private var showPreview: Bool = false
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                CollectorTheme.background.ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    // Instructions
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("PASTE IMAGE URL")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(CollectorTheme.textSecondary)
+                        
+                        Text("Copy an image URL from Safari and paste it here")
+                            .font(.caption)
+                            .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    
+                    // URL Input
+                    HStack {
+                        TextField("https://...", text: $urlText)
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(CollectorTheme.textPrimary)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        
+                        Button {
+                            if let clipboard = UIPasteboard.general.string {
+                                urlText = clipboard
+                            }
+                        } label: {
+                            Image(systemName: "doc.on.clipboard")
+                                .foregroundStyle(CollectorTheme.accentGold)
+                        }
+                    }
+                    .padding()
+                    .background(CollectorTheme.surfaceBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal)
+                    
+                    // Preview
+                    if showPreview && !urlText.isEmpty {
+                        AsyncImage(url: URL(string: urlText)) { phase in
+                            if let image = phase.image {
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            } else if phase.error != nil {
+                                VStack {
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .font(.largeTitle)
+                                        .foregroundStyle(.red)
+                                    Text("Failed to load")
+                                        .font(.caption)
+                                        .foregroundStyle(CollectorTheme.textSecondary)
+                                }
+                            } else {
+                                ProgressView()
+                            }
+                        }
+                        .frame(height: 250)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal)
+                    }
+                    
+                    // Buttons
+                    VStack(spacing: 12) {
+                        if !showPreview {
+                            Button {
+                                showPreview = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "eye")
+                                    Text("Preview")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(CollectorTheme.surfaceBackground)
+                                .foregroundStyle(CollectorTheme.textPrimary)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .disabled(urlText.isEmpty)
+                        } else {
+                            Button {
+                                onSave(urlText)
+                                dismiss()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "checkmark.circle.fill")
+                                    Text("Use This Image")
+                                }
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .foregroundStyle(.white)
+                                .background(CollectorTheme.statusHave)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    Spacer()
+                    
+                    // Quick links
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("OPEN IN SAFARI")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(CollectorTheme.textSecondary)
+                        
+                        HStack(spacing: 12) {
+                            QuickLinkButton(name: "AF411", color: .orange) {
+                                openURL("https://www.actionfigure411.com/?s=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+                            }
+                            QuickLinkButton(name: "LV", color: .blue) {
+                                openURL("https://legendsverse.com/?s=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+                            }
+                            QuickLinkButton(name: "McF", color: .green) {
+                                openURL("https://mcfarlane.com/search/?q=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+                            }
+                            QuickLinkButton(name: "Google", color: .red) {
+                                openURL("https://www.google.com/search?tbm=isch&q=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")+action+figure")
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(CollectorTheme.cardBackground)
+                }
+                .padding(.top)
+            }
+            .navigationTitle("Manual Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -106,310 +746,29 @@ struct ImageSearchView: View {
         }
     }
     
-    // MARK: - Current Image Section
-    
-    private var currentImageSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(title: "CURRENT IMAGE", icon: "photo")
-            
-            HStack(spacing: 16) {
-                // Thumbnail of current image
-                AsyncImage(url: URL(string: figure.imageName)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    case .failure:
-                        placeholderImage
-                    case .empty:
-                        ProgressView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    @unknown default:
-                        placeholderImage
-                    }
-                }
-                .frame(width: 100, height: 140)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
-                )
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(figure.name)
-                        .font(.system(.headline, design: .default, weight: .semibold))
-                        .foregroundStyle(CollectorTheme.textPrimary)
-                        .lineLimit(3)
-                    
-                    Text(figure.line.rawValue)
-                        .font(.system(.caption, design: .default, weight: .medium))
-                        .foregroundStyle(CollectorTheme.textSecondary)
-                    
-                    if !figure.imageName.isEmpty {
-                        Text("Has image")
-                            .font(.caption2)
-                            .foregroundStyle(CollectorTheme.statusHave)
-                    } else {
-                        Text("No image")
-                            .font(.caption2)
-                            .foregroundStyle(CollectorTheme.statusWant)
-                    }
-                }
-                
-                Spacer()
-            }
-            .padding()
-            .background(CollectorTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: CollectorTheme.cardCornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: CollectorTheme.cardCornerRadius)
-                    .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
-            )
-        }
-    }
-    
-    // MARK: - Quick Search Section
-    
-    private var quickSearchSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(title: "SEARCH SOURCES", icon: "magnifyingglass")
-            
-            Text("Tap to open in Safari, then copy the image URL")
-                .font(.caption)
-                .foregroundStyle(CollectorTheme.textSecondary)
-            
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ForEach(ImageSource.allCases, id: \.self) { source in
-                    Button {
-                        openSearch(source: source)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: source.icon)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(source.color)
-                            
-                            Text(source.rawValue)
-                                .font(.system(.subheadline, design: .default, weight: .medium))
-                                .foregroundStyle(CollectorTheme.textPrimary)
-                            
-                            Spacer()
-                            
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                                .foregroundStyle(CollectorTheme.textSecondary)
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .background(CollectorTheme.surfaceBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(source.color.opacity(0.3), lineWidth: 1)
-                        )
-                    }
-                }
-            }
-        }
-    }
-    
-    // MARK: - Manual URL Section
-    
-    private var manualURLSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(title: "PASTE IMAGE URL", icon: "link")
-            
-            HStack(spacing: 12) {
-                TextField("https://...", text: $imageURL)
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(CollectorTheme.textPrimary)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .padding(14)
-                    .background(CollectorTheme.surfaceBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
-                    )
-                    .onChange(of: imageURL) { _, newValue in
-                        validateURL(newValue)
-                    }
-                
-                // Paste button
-                Button {
-                    if let clipboardString = UIPasteboard.general.string {
-                        imageURL = clipboardString
-                        validateURL(clipboardString)
-                    }
-                } label: {
-                    Image(systemName: "doc.on.clipboard")
-                        .font(.title3)
-                        .foregroundStyle(CollectorTheme.accentGold)
-                        .padding(14)
-                        .background(CollectorTheme.surfaceBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(CollectorTheme.accentGold.opacity(0.3), lineWidth: 1)
-                        )
-                }
-            }
-            
-            // Preview Button
-            if isValidURL {
-                Button {
-                    previewImageURL = imageURL
-                    withAnimation(.spring(response: 0.3)) {
-                        showingPreview = true
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "eye")
-                        Text("Preview Image")
-                    }
-                    .font(.system(.subheadline, design: .default, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .foregroundStyle(CollectorTheme.textPrimary)
-                    .background(CollectorTheme.accentGold.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(CollectorTheme.accentGold.opacity(0.4), lineWidth: 1)
-                    )
-                }
-            }
-            
-            if let error = errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-        }
-    }
-    
-    // MARK: - Preview Section
-    
-    private var previewSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(title: "PREVIEW", icon: "photo.artframe")
-            
-            ZStack {
-                AsyncImage(url: URL(string: previewImageURL)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                    case .failure:
-                        VStack(spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle")
-                                .font(.largeTitle)
-                                .foregroundStyle(.red)
-                            Text("Failed to load image")
-                                .font(.caption)
-                                .foregroundStyle(CollectorTheme.textSecondary)
-                        }
-                    case .empty:
-                        ProgressView()
-                            .scaleEffect(1.5)
-                    @unknown default:
-                        placeholderImage
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: 300)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: CollectorTheme.cardCornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: CollectorTheme.cardCornerRadius)
-                    .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
-            )
-            
-            // Save Button
-            Button {
-                saveImage()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                    Text("Use This Image")
-                }
-                .font(.system(.headline, design: .default, weight: .semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .foregroundStyle(.white)
-                .background(CollectorTheme.statusHave)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .shadow(color: CollectorTheme.statusHave.opacity(0.4), radius: 8, x: 0, y: 4)
-            }
-        }
-    }
-    
-    // MARK: - Helpers
-    
-    private var placeholderImage: some View {
-        ZStack {
-            CollectorTheme.surfaceBackground
-            Image(systemName: "photo")
-                .font(.largeTitle)
-                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.5))
-        }
-    }
-    
-    private func sectionHeader(title: String, icon: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(CollectorTheme.accentGold)
-            
-            Text(title)
-                .font(.system(.caption, design: .default, weight: .semibold))
-                .textCase(.uppercase)
-                .tracking(1)
-                .foregroundStyle(CollectorTheme.textSecondary)
-        }
-    }
-    
-    private func openSearch(source: ImageSource) {
-        if let url = source.searchURL(for: figure.name) {
+    private func openURL(_ urlString: String) {
+        if let url = URL(string: urlString) {
             UIApplication.shared.open(url)
         }
     }
+}
+
+struct QuickLinkButton: View {
+    let name: String
+    let color: Color
+    let action: () -> Void
     
-    private func validateURL(_ urlString: String) {
-        errorMessage = nil
-        
-        guard !urlString.isEmpty else {
-            isValidURL = false
-            return
+    var body: some View {
+        Button(action: action) {
+            Text(name)
+                .font(.caption)
+                .fontWeight(.medium)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(color.opacity(0.15))
+                .foregroundStyle(color)
+                .clipShape(Capsule())
         }
-        
-        // Check if it's a valid URL
-        guard let url = URL(string: urlString),
-              let scheme = url.scheme,
-              ["http", "https"].contains(scheme.lowercased()) else {
-            isValidURL = false
-            errorMessage = "Please enter a valid image URL starting with http:// or https://"
-            return
-        }
-        
-        // Check if it looks like an image URL
-        let imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"]
-        let pathExtension = url.pathExtension.lowercased()
-        
-        // Either has image extension or we'll try to load it anyway
-        isValidURL = true
-        
-        if !imageExtensions.contains(pathExtension) && !urlString.contains("image") {
-            // Warning but still valid - some image URLs don't have extensions
-            errorMessage = "URL may not be an image. Preview to verify."
-        }
-    }
-    
-    private func saveImage() {
-        dataStore.updateImage(for: figure, imageURL: previewImageURL)
-        dismiss()
     }
 }
 
