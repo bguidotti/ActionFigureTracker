@@ -50,7 +50,6 @@ struct ImageSearchView: View {
     @State private var isSearching: Bool = false
     @State private var errorMessage: String?
     @State private var selectedImage: ImageResult?
-    @State private var showingPreview: Bool = false
     
     // Source filters
     @State private var enabledSources: Set<String> = ["ActionFigure411", "Google"]
@@ -102,19 +101,18 @@ struct ImageSearchView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingPreview) {
-                if let selected = selectedImage {
-                    ImagePreviewSheet(
-                        imageResult: selected,
-                        onConfirm: {
-                            saveImage(url: selected.url)
-                        },
-                        onCancel: {
-                            showingPreview = false
-                            selectedImage = nil
-                        }
-                    )
-                }
+            // Use .sheet(item:) for reliable data binding to sheet
+            .sheet(item: $selectedImage) { selected in
+                ImagePreviewSheet(
+                    imageResult: selected,
+                    onConfirm: {
+                        saveImage(url: selected.url)
+                    },
+                    onCancel: {
+                        selectedImage = nil
+                    }
+                )
+                .id(selected.id) // Force fresh view for each image
             }
             .sheet(isPresented: $showManualEntry) {
                 ManualURLSheet(
@@ -247,7 +245,6 @@ struct ImageSearchView: View {
                 ForEach(searchResults) { result in
                     ImageResultCard(result: result) {
                         selectedImage = result
-                        showingPreview = true
                     }
                 }
             }
