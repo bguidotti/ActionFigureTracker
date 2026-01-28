@@ -279,16 +279,23 @@ struct FigureCardView: View {
                 
                 // Bottom content overlay
                 VStack(alignment: .leading, spacing: 6) {
-                    // Series label
+                    // Series • Year (year as plain digits, no comma)
                     if let year = figure.year {
-                        Text("\(figure.line.rawValue) • \(year)")
+                        Text("\(figure.line.rawValue) • \(String(year))")
                             .seriesLabelStyle()
                     } else {
                         Text(figure.line.rawValue)
                             .seriesLabelStyle()
                     }
                     
-                    // Name
+                    // Wave so you can tell figures apart
+                    if let wave = figure.wave, !wave.isEmpty {
+                        Text("Wave: \(wave)")
+                            .font(.system(.caption, design: .default, weight: .medium))
+                            .foregroundStyle(CollectorTheme.textSecondary.opacity(0.9))
+                    }
+                    
+                    // Name (most descriptive title)
                     Text(figure.name)
                         .font(.system(.headline, design: .monospaced))
                         .fontWeight(.bold)

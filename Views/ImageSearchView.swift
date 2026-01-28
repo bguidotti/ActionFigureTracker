@@ -181,6 +181,12 @@ struct ImageSearchView: View {
                     Text(figure.line.rawValue)
                         .font(.caption)
                         .foregroundStyle(CollectorTheme.textSecondary)
+                    
+                    if let wave = figure.wave, !wave.isEmpty {
+                        Text("Wave: \(wave)")
+                            .font(.caption2)
+                            .foregroundStyle(CollectorTheme.textSecondary.opacity(0.9))
+                    }
                 }
                 
                 Spacer()

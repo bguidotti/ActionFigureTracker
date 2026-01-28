@@ -110,13 +110,13 @@ struct FigureDetailView: View {
                     
                     // Name and Line
                     VStack(spacing: 10) {
-                        // Series label
+                        // Series label (year without locale formatting — e.g. 2025 not 2,025)
                         HStack(spacing: 8) {
                             Text(currentFigure.line.emoji)
                                 .font(.title3)
                             
                             if let year = currentFigure.year {
-                                Text("\(currentFigure.line.rawValue) • \(year)")
+                                Text("\(currentFigure.line.rawValue) • \(String(year))")
                                     .seriesLabelStyle()
                             } else {
                                 Text(currentFigure.line.rawValue)
@@ -124,18 +124,17 @@ struct FigureDetailView: View {
                             }
                         }
                         
-                        // Name
+                        // Name (most descriptive title)
                         Text(currentFigure.name)
                             .font(.system(.title2, design: .monospaced, weight: .bold))
                             .foregroundStyle(CollectorTheme.textPrimary)
                             .multilineTextAlignment(.center)
                         
-                        if let wave = currentFigure.wave {
-                            Text("WAVE: \(wave.uppercased())")
-                                .font(.system(.caption, design: .default, weight: .semibold))
-                                .textCase(.uppercase)
-                                .tracking(1)
-                                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
+                        // Wave descriptor so you can tell figures apart
+                        if let wave = currentFigure.wave, !wave.isEmpty {
+                            Text("Wave: \(wave)")
+                                .font(.system(.subheadline, design: .default, weight: .medium))
+                                .foregroundStyle(CollectorTheme.textSecondary)
                         }
                     }
                     .padding(.horizontal)
