@@ -52,7 +52,7 @@ struct ImageSearchView: View {
     @State private var showingPreview: Bool = false
     
     // Source filters
-    @State private var enabledSources: Set<String> = ["ActionFigure411", "LegendsVerse", "McFarlane", "Google"]
+    @State private var enabledSources: Set<String> = ["ActionFigure411", "Google"]
     
     // Manual URL fallback
     @State private var showManualEntry: Bool = false
@@ -211,7 +211,7 @@ struct ImageSearchView: View {
     private var sourceFilters: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(["ActionFigure411", "LegendsVerse", "McFarlane", "Google"], id: \.self) { source in
+                ForEach(["ActionFigure411", "Google"], id: \.self) { source in
                     SourceFilterChip(
                         name: source,
                         isEnabled: enabledSources.contains(source),
@@ -351,8 +351,11 @@ struct ImageSearchView: View {
         // Build sources parameter
         let sources = enabledSources.map { $0.lowercased().replacingOccurrences(of: " ", with: "") }.joined(separator: ",")
         
+        // Include the figure's line for better matching
+        let lineParam = figure.line.rawValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        
         guard let encodedQuery = searchQuery.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "\(apiBaseURL)/api/search?q=\(encodedQuery)&sources=\(sources)") else {
+              let url = URL(string: "\(apiBaseURL)/api/search?q=\(encodedQuery)&sources=\(sources)&line=\(lineParam)") else {
             errorMessage = "Invalid search query"
             isSearching = false
             return
@@ -503,8 +506,9 @@ struct ImagePreviewSheet: View {
     let onConfirm: () -> Void
     let onCancel: () -> Void
     
-    // Force a unique ID for each preview to ensure fresh load
-    @State private var loadID = UUID()
+    // Delay loading to let sheet fully present
+    @State private var isReady = false
+    @State private var loadAttempt = 0
     
     var body: some View {
         NavigationStack {
@@ -512,50 +516,59 @@ struct ImagePreviewSheet: View {
                 CollectorTheme.background.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    // Large preview - use .id() to force fresh load in sheet context
-                    AsyncImage(url: URL(string: imageResult.url)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        case .failure(let error):
-                            VStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(.red)
-                                Text("Failed to load image")
-                                    .foregroundStyle(CollectorTheme.textSecondary)
-                                Text(error.localizedDescription)
-                                    .font(.caption2)
-                                    .foregroundStyle(CollectorTheme.textSecondary.opacity(0.5))
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                                
-                                // Retry button
-                                Button("Retry") {
-                                    loadID = UUID()
+                    // Large preview - only load after sheet is ready
+                    if isReady {
+                        AsyncImage(url: URL(string: imageResult.url)) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            case .failure(let error):
+                                VStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .font(.largeTitle)
+                                        .foregroundStyle(.red)
+                                    Text("Failed to load image")
+                                        .foregroundStyle(CollectorTheme.textSecondary)
+                                    
+                                    // Retry button
+                                    Button("Retry") {
+                                        loadAttempt += 1
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .tint(CollectorTheme.accentGold)
                                 }
-                                .buttonStyle(.bordered)
-                                .tint(CollectorTheme.accentGold)
+                            case .empty:
+                                VStack(spacing: 12) {
+                                    ProgressView()
+                                        .scaleEffect(1.5)
+                                    Text("Loading image...")
+                                        .font(.caption)
+                                        .foregroundStyle(CollectorTheme.textSecondary)
+                                }
+                            @unknown default:
+                                EmptyView()
                             }
-                        case .empty:
-                            VStack(spacing: 12) {
-                                ProgressView()
-                                    .scaleEffect(1.5)
-                                Text("Loading image...")
-                                    .font(.caption)
-                                    .foregroundStyle(CollectorTheme.textSecondary)
-                            }
-                        @unknown default:
-                            EmptyView()
                         }
+                        .id(loadAttempt) // Force reload on retry
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 350)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .padding(.horizontal)
+                    } else {
+                        // Placeholder while waiting for sheet to present
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                            Text("Preparing...")
+                                .font(.caption)
+                                .foregroundStyle(CollectorTheme.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 350)
+                        .padding(.horizontal)
                     }
-                    .id(loadID) // Force fresh load
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 350)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
                     
                     // Info
                     VStack(spacing: 8) {
@@ -604,6 +617,13 @@ struct ImagePreviewSheet: View {
             }
             .navigationTitle("Preview")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                // Delay image loading to let sheet fully present
+                // This fixes the black screen issue
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isReady = true
+                }
+            }
         }
     }
 }
@@ -736,9 +756,6 @@ struct ManualURLSheet: View {
                         HStack(spacing: 12) {
                             QuickLinkButton(name: "AF411", color: .orange) {
                                 openURL("https://www.actionfigure411.com/?s=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
-                            }
-                            QuickLinkButton(name: "LV", color: .blue) {
-                                openURL("https://legendsverse.com/?s=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
                             }
                             QuickLinkButton(name: "McF", color: .green) {
                                 openURL("https://mcfarlane.com/search/?q=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")

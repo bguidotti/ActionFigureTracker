@@ -42,6 +42,16 @@ VISUAL_GUIDES = {
     'motu_masterverse': 'https://www.actionfigure411.com/masters-of-the-universe/masterverse-visual-guide.php',
 }
 
+# Map iOS app line names to visual guide keys
+LINE_TO_GUIDES = {
+    'DC Multiverse': ['multiverse', 'page_punchers'],  # Page Punchers are part of Multiverse
+    'DC Super Powers': ['super_powers'],
+    'DC Retro': ['retro_66', 'batman_animated'],  # Both retro style
+    'DC Direct': ['multiverse'],  # Fall back to Multiverse
+    'MOTU Origins': ['motu_origins'],
+    'MOTU Masterverse': ['motu_masterverse'],
+}
+
 # Initialize cache for all guides
 for guide in VISUAL_GUIDES:
     CACHE[guide] = {'data': [], 'timestamp': 0}
@@ -165,14 +175,33 @@ def fetch_visual_guide(guide_type: str) -> list:
         return cache_entry.get('data', [])
 
 
-def search_actionfigure411(query: str) -> list:
-    """Search ActionFigure411 visual guides for matching figures"""
+def search_actionfigure411(query: str, line: str = None) -> list:
+    """Search ActionFigure411 visual guides for matching figures
+    
+    Args:
+        query: Search term
+        line: Optional figure line (e.g., 'DC Multiverse') to prioritize results
+    """
     results = []
     
-    # Fetch all guides
+    # Determine which guides to search based on line
+    if line and line in LINE_TO_GUIDES:
+        # Search matching guides first, then others
+        priority_guides = LINE_TO_GUIDES[line]
+        other_guides = [g for g in VISUAL_GUIDES.keys() if g not in priority_guides]
+        guide_order = priority_guides + other_guides
+        logger.info(f"Line '{line}' - prioritizing guides: {priority_guides}")
+    else:
+        guide_order = list(VISUAL_GUIDES.keys())
+    
+    # Fetch all guides in order
     all_figures = []
-    for guide_type in VISUAL_GUIDES.keys():
-        all_figures.extend(fetch_visual_guide(guide_type))
+    for guide_type in guide_order:
+        figures = fetch_visual_guide(guide_type)
+        # Tag figures with their guide for priority sorting
+        for fig in figures:
+            fig['_priority'] = 0 if line and guide_type in LINE_TO_GUIDES.get(line, []) else 1
+        all_figures.extend(figures)
     
     if not all_figures:
         logger.warning("No figures in cache, attempting direct fetch")
@@ -210,12 +239,15 @@ def search_actionfigure411(query: str) -> list:
             if ratio > 0.7:
                 results.append(fig)
     
-    # Sort by relevance (exact matches first)
+    # Sort by relevance (matching line first, then exact matches)
     def relevance_score(fig):
+        priority = fig.get('_priority', 1)  # 0 = matching line, 1 = other
         title = fig.get('title', '').lower()
-        if query_lower in title:
-            return 0
-        return 1
+        exact_match = 0 if query_lower in title else 1
+        # Remove the internal priority field before returning
+        if '_priority' in fig:
+            del fig['_priority']
+        return (priority, exact_match)
     
     results.sort(key=relevance_score)
     
@@ -303,12 +335,16 @@ def search_images():
     Query params:
     - q: Search query (required)
     - sources: Comma-separated list of sources (optional, default: all)
+    - line: Figure line name (optional, e.g., 'DC Multiverse') to prioritize results
     """
     query = request.args.get('q', '').strip()
     if not query:
         return jsonify({'error': 'Query parameter "q" is required'}), 400
     
     sources_param = request.args.get('sources', 'all').lower()
+    line_param = request.args.get('line', '').strip()  # e.g., 'DC Multiverse'
+    
+    logger.info(f"Search: q='{query}', sources={sources_param}, line='{line_param}'")
     
     all_results = []
     
@@ -317,10 +353,11 @@ def search_images():
         futures = {}
         
         if sources_param == 'all' or 'actionfigure411' in sources_param:
-            futures[executor.submit(search_actionfigure411, query)] = 'actionfigure411'
+            futures[executor.submit(search_actionfigure411, query, line_param)] = 'actionfigure411'
         
-        if sources_param == 'all' or 'legendsverse' in sources_param:
-            futures[executor.submit(search_legendsverse, query)] = 'legendsverse'
+        # LegendsVerse disabled - URLs are unreliable
+        # if sources_param == 'all' or 'legendsverse' in sources_param:
+        #     futures[executor.submit(search_legendsverse, query)] = 'legendsverse'
         
         if sources_param == 'all' or 'google' in sources_param:
             futures[executor.submit(search_google_images, query)] = 'google'
