@@ -2,7 +2,7 @@
 //  FigureDetailView.swift
 //  ActionFigureTracker
 //
-//  Detailed view of a single figure - big image, big buttons!
+//  Premium detail view for a single figure
 //
 
 import SwiftUI
@@ -22,119 +22,193 @@ struct FigureDetailView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Big Image
-                ZStack(alignment: .topTrailing) {
-                    // Background
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(Color.gray.opacity(0.1))
-                        .frame(minHeight: 400)
-                    
-                    FigureImageView(imageName: currentFigure.imageName)
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: 400)
-                        .clipShape(RoundedRectangle(cornerRadius: 24))
-                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-                    
-                    // Badges overlay
-                    VStack(alignment: .trailing, spacing: 8) {
-                        // Platinum badge
-                        if currentFigure.isPlatinum {
-                            PlatinumBadge()
-                        }
-                        // Favorite button
-                        Button(action: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                dataStore.toggleFavorite(for: figure)
+        ZStack {
+            CollectorTheme.background
+                .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Big Image with gradient
+                    ZStack(alignment: .bottom) {
+                        // Background
+                        RoundedRectangle(cornerRadius: CollectorTheme.cardCornerRadius)
+                            .fill(CollectorTheme.surfaceBackground)
+                            .frame(minHeight: 420)
+                        
+                        FigureImageView(imageName: currentFigure.imageName)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 420)
+                            .clipShape(RoundedRectangle(cornerRadius: CollectorTheme.cardCornerRadius))
+                        
+                        // Gradient overlay
+                        LinearGradient(
+                            colors: [
+                                .clear,
+                                .clear,
+                                CollectorTheme.cardBackground.opacity(0.5),
+                                CollectorTheme.cardBackground.opacity(0.9)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 150)
+                        .clipShape(RoundedRectangle(cornerRadius: CollectorTheme.cardCornerRadius))
+                        
+                        // Badges overlay (top)
+                        VStack {
+                            HStack {
+                                // Status pill
+                                CollectionStatusPill(status: currentFigure.status)
+                                
+                                Spacer()
+                                
+                                // Platinum badge
+                                if currentFigure.isPlatinum {
+                                    PlatinumBadge()
+                                }
+                                
+                                // Favorite button
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                        dataStore.toggleFavorite(for: figure)
+                                    }
+                                }) {
+                                    Image(systemName: currentFigure.isFavorite ? "heart.fill" : "heart")
+                                        .font(.title3)
+                                        .foregroundStyle(currentFigure.isFavorite ? .red : CollectorTheme.textSecondary)
+                                        .padding(12)
+                                        .background(.ultraThinMaterial.opacity(0.8))
+                                        .clipShape(Circle())
+                                        .overlay(
+                                            Circle()
+                                                .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
+                                        )
+                                }
                             }
-                        }) {
-                            Image(systemName: currentFigure.isFavorite ? "heart.fill" : "heart")
-                                .font(.title)
-                                .foregroundStyle(currentFigure.isFavorite ? .red : .gray)
-                                .padding(16)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
+                            Spacer()
                         }
+                        .padding(12)
                     }
-                    .padding()
-                }
-                
-                // Name and Line
-                VStack(spacing: 8) {
-                    VStack(spacing: 4) {
+                    .bentoCard()
+                    
+                    // Name and Line
+                    VStack(spacing: 10) {
+                        // Series label
+                        HStack(spacing: 8) {
+                            Text(currentFigure.line.emoji)
+                                .font(.title3)
+                            
+                            if let year = currentFigure.year {
+                                Text("\(currentFigure.line.rawValue) • \(year)")
+                                    .seriesLabelStyle()
+                            } else {
+                                Text(currentFigure.line.rawValue)
+                                    .seriesLabelStyle()
+                            }
+                        }
+                        
+                        // Name
                         Text(currentFigure.name)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
+                            .font(.system(.title2, design: .monospaced, weight: .bold))
+                            .foregroundStyle(CollectorTheme.textPrimary)
                             .multilineTextAlignment(.center)
                         
-                        if currentFigure.isPlatinum {
-                            PlatinumBadge()
+                        if let wave = currentFigure.wave {
+                            Text("WAVE: \(wave.uppercased())")
+                                .font(.system(.caption, design: .default, weight: .semibold))
+                                .textCase(.uppercase)
+                                .tracking(1)
+                                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
                         }
                     }
+                    .padding(.horizontal)
                     
-                    HStack {
-                        Text(currentFigure.line.emoji)
-                        Text(currentFigure.line.rawValue)
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    if let wave = currentFigure.wave {
-                        Text("Wave: \(wave)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                // BIG Status Button
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                        if currentFigure.status == .want {
-                            showingConfetti = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                showingConfetti = false
+                    // Status Toggle Button
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            if currentFigure.status == .want {
+                                showingConfetti = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    showingConfetti = false
+                                }
                             }
+                            dataStore.toggleStatus(for: figure)
                         }
-                        dataStore.toggleStatus(for: figure)
+                    }) {
+                        HStack(spacing: 10) {
+                            Circle()
+                                .fill(currentFigure.status == .have ? CollectorTheme.statusHave : CollectorTheme.statusWant)
+                                .frame(width: 10, height: 10)
+                                .shadow(
+                                    color: currentFigure.status == .have ? CollectorTheme.statusHaveGlow.opacity(0.6) : CollectorTheme.statusWant.opacity(0.5),
+                                    radius: 4,
+                                    x: 0,
+                                    y: 0
+                                )
+                            
+                            Text(currentFigure.status == .have ? "IN COLLECTION" : "ADD TO COLLECTION")
+                                .font(.system(.subheadline, design: .default, weight: .semibold))
+                                .textCase(.uppercase)
+                                .tracking(1)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            currentFigure.status == .have
+                                ? CollectorTheme.statusHave.opacity(0.15)
+                                : CollectorTheme.statusWant.opacity(0.15)
+                        )
+                        .foregroundStyle(
+                            currentFigure.status == .have
+                                ? CollectorTheme.statusHave
+                                : CollectorTheme.statusWant
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(
+                                    currentFigure.status == .have
+                                        ? CollectorTheme.statusHave.opacity(0.3)
+                                        : CollectorTheme.statusWant.opacity(0.3),
+                                    lineWidth: 1
+                                )
+                        )
                     }
-                }) {
-                    HStack(spacing: 12) {
-                        Image(systemName: currentFigure.status == .have ? "checkmark.circle.fill" : "star.fill")
-                            .font(.title)
-                        Text(currentFigure.status == .have ? "I HAVE IT! ✅" : "I WANT IT! ⭐")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
-                    .background(currentFigure.status == .have ? Color.green : Color.orange)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                }
-                .scaleEffect(showingConfetti ? 1.1 : 1.0)
-                .animation(.spring(response: 0.3), value: showingConfetti)
-                
-                // Notes Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("My Notes 📝")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                    .scaleEffect(showingConfetti ? 1.02 : 1.0)
+                    .animation(.spring(response: 0.3), value: showingConfetti)
+                    .padding(.horizontal)
                     
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 100)
-                        .padding(12)
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .onChange(of: notes) { _, newValue in
-                            dataStore.updateNotes(for: figure, notes: newValue)
-                        }
+                    // Notes Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("NOTES")
+                            .font(.system(.subheadline, design: .default, weight: .semibold))
+                            .textCase(.uppercase)
+                            .tracking(CollectorTheme.trackingWide)
+                            .foregroundStyle(CollectorTheme.textSecondary)
+                        
+                        TextEditor(text: $notes)
+                            .font(.system(.body, design: .default))
+                            .foregroundStyle(CollectorTheme.textPrimary)
+                            .scrollContentBackground(.hidden)
+                            .frame(minHeight: 100)
+                            .padding(14)
+                            .background(CollectorTheme.surfaceBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
+                            )
+                            .onChange(of: notes) { _, newValue in
+                                dataStore.updateNotes(for: figure, notes: newValue)
+                            }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    
+                    Spacer(minLength: 50)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Spacer(minLength: 50)
+                .padding(.vertical)
             }
-            .padding()
         }
         .overlay(
             ConfettiView(isShowing: showingConfetti)
@@ -146,7 +220,7 @@ struct FigureDetailView: View {
                     showingDeleteAlert = true
                 } label: {
                     Image(systemName: "trash")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color(hex: "E53935"))
                 }
             }
         }

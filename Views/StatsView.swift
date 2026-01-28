@@ -2,7 +2,7 @@
 //  StatsView.swift
 //  ActionFigureTracker
 //
-//  Fun stats page showing collection progress!
+//  Premium analytics dashboard for collectors
 //
 
 import SwiftUI
@@ -13,35 +13,40 @@ struct StatsView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Overall stats
-                    OverallStatsCard(dataStore: dataStore)
-                    
-                    // Stats by line
-                    ForEach(FigureLine.allCases) { line in
-                        LineStatsCard(line: line, dataStore: dataStore)
+            ZStack {
+                CollectorTheme.background
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Overall stats
+                        OverallStatsCard(dataStore: dataStore)
+                        
+                        // Stats by line
+                        ForEach(FigureLine.allCases) { line in
+                            LineStatsCard(line: line, dataStore: dataStore)
+                        }
+                        
+                        // Favorites section
+                        if !dataStore.favorites().isEmpty {
+                            FavoritesSection(favorites: dataStore.favorites())
+                        }
+                        
+                        // iCloud Status
+                        iCloudStatusCard()
+                        
+                        // Reset button (hidden at bottom)
+                        Button(action: { showingReset = true }) {
+                            Text("Reset to Sample Data")
+                                .font(.caption)
+                                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.5))
+                        }
+                        .padding(.top, 40)
                     }
-                    
-                    // Favorites section
-                    if !dataStore.favorites().isEmpty {
-                        FavoritesSection(favorites: dataStore.favorites())
-                    }
-                    
-                    // iCloud Status
-                    iCloudStatusCard()
-                    
-                    // Reset button (hidden at bottom)
-                    Button(action: { showingReset = true }) {
-                        Text("Reset to Sample Data")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 40)
+                    .padding()
                 }
-                .padding()
             }
-            .navigationTitle("My Stats! 📊")
+            .navigationTitle("Analytics")
             .alert("Reset Collection?", isPresented: $showingReset) {
                 Button("Cancel", role: .cancel) { }
                 Button("Reset", role: .destructive) {
@@ -65,47 +70,50 @@ struct OverallStatsCard: View {
     var progress: Double { total > 0 ? Double(have) / Double(total) : 0 }
     
     var body: some View {
-        VStack(spacing: 16) {
-            Text("🏆 Total Collection 🏆")
-                .font(.title2)
-                .fontWeight(.bold)
+        VStack(spacing: 20) {
+            Text("COLLECTION OVERVIEW")
+                .font(.system(.subheadline, design: .default, weight: .semibold))
+                .textCase(.uppercase)
+                .tracking(CollectorTheme.trackingWide)
+                .foregroundStyle(CollectorTheme.textSecondary)
             
             // Progress ring
             ZStack {
                 Circle()
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 20)
+                    .stroke(CollectorTheme.surfaceBackground, lineWidth: 16)
                 
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(
-                        LinearGradient(colors: [.green, .blue], 
-                                      startPoint: .topLeading, 
-                                      endPoint: .bottomTrailing),
-                        style: StrokeStyle(lineWidth: 20, lineCap: .round)
+                        LinearGradient(
+                            colors: [CollectorTheme.statusHave, CollectorTheme.accentGold],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 16, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
                     .animation(.spring(response: 0.5), value: progress)
                 
-                VStack {
+                VStack(spacing: 4) {
                     Text("\(have)")
-                        .font(.system(size: 48, weight: .bold))
+                        .font(.system(size: 44, weight: .bold, design: .monospaced))
+                        .foregroundStyle(CollectorTheme.textPrimary)
                     Text("of \(total)")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .font(.system(.subheadline, design: .monospaced))
+                        .foregroundStyle(CollectorTheme.textSecondary)
                 }
             }
-            .frame(width: 180, height: 180)
+            .frame(width: 160, height: 160)
             
             // Stats row
             HStack(spacing: 40) {
-                StatItem(value: have, label: "Got It!", color: .green, emoji: "✅")
-                StatItem(value: want, label: "Want It!", color: .orange, emoji: "⭐")
+                StatItem(value: have, label: "OWNED", color: CollectorTheme.statusHave, emoji: "")
+                StatItem(value: want, label: "WISHLIST", color: CollectorTheme.statusWant, emoji: "")
             }
         }
         .padding(24)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+        .bentoCard()
     }
 }
 
@@ -116,16 +124,22 @@ struct StatItem: View {
     let emoji: String
     
     var body: some View {
-        VStack(spacing: 4) {
-            Text(emoji)
-                .font(.title)
+        VStack(spacing: 6) {
+            // Glowing indicator dot
+            Circle()
+                .fill(color)
+                .frame(width: 10, height: 10)
+                .shadow(color: color.opacity(0.6), radius: 4, x: 0, y: 0)
+            
             Text("\(value)")
-                .font(.title)
-                .fontWeight(.bold)
+                .font(.system(.title, design: .monospaced, weight: .bold))
                 .foregroundStyle(color)
+            
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(.caption2, design: .default, weight: .semibold))
+                .textCase(.uppercase)
+                .tracking(1)
+                .foregroundStyle(CollectorTheme.textSecondary)
         }
     }
 }
@@ -143,57 +157,59 @@ struct LineStatsCard: View {
     
     var lineColor: Color {
         switch line {
-        // DC Lines
-        case .dcMultiverse: return .blue
-        case .dcSuperPowers: return .purple
-        case .dcRetro: return .cyan
-        case .dcDirect: return .indigo
-        
-        // MOTU Lines
-        case .motuOrigins: return .orange
-        case .motuMasterverse: return .yellow
-        
-        // Marvel
-        case .marvelLegends: return .red
-        
-        // Star Wars
-        case .starWarsBlackSeries: return Color(red: 0.2, green: 0.2, blue: 0.3) // Dark blue-gray instead of black
+        case .dcMultiverse: return Color(hex: "4A90D9")
+        case .dcSuperPowers: return Color(hex: "9B59B6")
+        case .dcRetro: return Color(hex: "00BCD4")
+        case .dcDirect: return Color(hex: "5C6BC0")
+        case .motuOrigins: return Color(hex: "FF9800")
+        case .motuMasterverse: return Color(hex: "FFC107")
+        case .marvelLegends: return Color(hex: "E53935")
+        case .starWarsBlackSeries: return Color(hex: "607D8B")
         }
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text(line.emoji)
-                    .font(.title)
+                    .font(.title2)
+                
                 Text(line.rawValue)
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.system(.subheadline, design: .default, weight: .semibold))
+                    .textCase(.uppercase)
+                    .tracking(0.8)
+                    .foregroundStyle(CollectorTheme.textPrimary)
+                
                 Spacer()
+                
                 Text("\(have)/\(total)")
-                    .font(.title3)
-                    .fontWeight(.bold)
+                    .font(.system(.subheadline, design: .monospaced, weight: .bold))
                     .foregroundStyle(lineColor)
             }
             
             // Progress bar
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.gray.opacity(0.2))
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(CollectorTheme.surfaceBackground)
                     
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(lineColor)
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(
+                            LinearGradient(
+                                colors: [lineColor, lineColor.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .frame(width: geometry.size.width * progress)
                         .animation(.spring(response: 0.5), value: progress)
+                        .shadow(color: lineColor.opacity(0.4), radius: 4, x: 0, y: 0)
                 }
             }
-            .frame(height: 20)
+            .frame(height: 8)
         }
-        .padding(20)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .padding(18)
+        .bentoCard()
     }
 }
 
@@ -203,34 +219,37 @@ struct FavoritesSection: View {
     let favorites: [ActionFigure]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("❤️ My Favorites")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: 14) {
+            Text("FAVORITES")
+                .font(.system(.subheadline, design: .default, weight: .semibold))
+                .textCase(.uppercase)
+                .tracking(CollectorTheme.trackingWide)
+                .foregroundStyle(CollectorTheme.textSecondary)
             
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
+                HStack(spacing: 14) {
                     ForEach(favorites) { figure in
-                        VStack {
+                        VStack(spacing: 8) {
                             FigureImageView(imageName: figure.imageName)
-                                .frame(width: 80, height: 80)
+                                .frame(width: 70, height: 70)
                                 .clipShape(Circle())
+                                .overlay(
+                                    Circle()
+                                        .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
+                                )
+                            
                             Text(figure.name)
-                                .font(.caption)
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(CollectorTheme.textSecondary)
                                 .lineLimit(1)
                         }
-                        .frame(width: 90)
+                        .frame(width: 85)
                     }
                 }
             }
         }
-        .padding(20)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .padding(18)
+        .bentoCard()
     }
 }
 
@@ -241,36 +260,40 @@ struct iCloudStatusCard: View {
     @State private var isiCloudAvailable = iCloudPersistence.shared.isiCloudAvailable
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Image(systemName: isiCloudAvailable ? "icloud.fill" : "icloud.slash.fill")
-                    .font(.title2)
-                    .foregroundStyle(isiCloudAvailable ? .blue : .gray)
-                Text("Data Storage")
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.title3)
+                    .foregroundStyle(isiCloudAvailable ? Color(hex: "4A90D9") : CollectorTheme.textSecondary)
+                
+                Text("DATA STORAGE")
+                    .font(.system(.subheadline, design: .default, weight: .semibold))
+                    .textCase(.uppercase)
+                    .tracking(0.8)
+                    .foregroundStyle(CollectorTheme.textPrimary)
+                
                 Spacer()
             }
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text("Status:")
-                        .foregroundStyle(.secondary)
+                    Text("Status")
+                        .font(.caption)
+                        .foregroundStyle(CollectorTheme.textSecondary)
                     Spacer()
                     Text(storageLocation)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(isiCloudAvailable ? .blue : .orange)
+                        .font(.system(.caption, design: .monospaced, weight: .semibold))
+                        .foregroundStyle(isiCloudAvailable ? Color(hex: "4A90D9") : CollectorTheme.statusWant)
                 }
                 
                 Text("Your collection is saved in the app's Documents folder. If you have iCloud Backup enabled, it will be automatically backed up and restored when you reinstall the app.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption2)
+                    .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
+                    .lineSpacing(2)
             }
         }
-        .padding(20)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .padding(18)
+        .bentoCard()
     }
 }
 

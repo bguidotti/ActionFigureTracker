@@ -70,7 +70,7 @@ struct ConfettiParticle: Identifiable {
 
 #Preview {
     ZStack {
-        Color.white
+        CollectorTheme.background
         ConfettiView(isShowing: true)
     }
 }

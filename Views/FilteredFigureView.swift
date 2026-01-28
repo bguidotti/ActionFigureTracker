@@ -2,7 +2,7 @@
 //  FilteredFigureView.swift
 //  ActionFigureTracker
 //
-//  Shows figures filtered by status (Have/Want)
+//  Premium filtered view by status (Owned/Wishlist)
 //
 
 import SwiftUI
@@ -36,61 +36,78 @@ struct FilteredFigureView: View {
     }
     
     var title: String {
-        filterStatus == .have ? "My Collection! 🏆" : "My Wishlist! ⭐"
+        filterStatus == .have ? "Owned" : "Wishlist"
     }
     
     var emptyMessage: String {
         filterStatus == .have 
-            ? "No figures yet!\nTap the star on figures you have!"
-            : "Your wishlist is empty!\nAdd figures you want!"
+            ? "No figures in collection yet.\nBrowse and add figures you own."
+            : "Your wishlist is empty.\nAdd figures you want to collect."
     }
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Line Picker
-                LinePickerView(selectedLine: $selectedLine)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+            ZStack {
+                CollectorTheme.background
+                    .ignoresSafeArea()
                 
-                if filteredFigures.isEmpty {
-                    // Empty state
-                    ContentUnavailableView {
-                        Label(filterStatus == .have ? "No Figures Yet" : "Empty Wishlist", 
-                              systemImage: filterStatus == .have ? "figure.stand" : "star")
-                    } description: {
-                        Text(emptyMessage)
-                    }
-                } else {
-                    // Figure Grid
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            // Count header
-                            HStack {
-                                Text("\(filteredFigures.count) figures")
-                                    .font(.headline)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
-                            .padding(.horizontal)
-                            .padding(.top, 8)
-                            .id("top")
+                VStack(spacing: 0) {
+                    // Line Picker
+                    LinePickerView(selectedLine: $selectedLine)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    if filteredFigures.isEmpty {
+                        // Empty state
+                        VStack(spacing: 16) {
+                            Image(systemName: filterStatus == .have ? "checkmark.seal" : "sparkles")
+                                .font(.system(size: 48))
+                                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.5))
                             
-                            LazyVGrid(columns: columns, spacing: 20) {
-                                ForEach(filteredFigures) { figure in
-                                    NavigationLink(destination: FigureDetailView(figure: figure)) {
-                                        FigureCardView(figure: figure)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .id(figure.id)
-                                }
-                            }
-                            .padding()
+                            Text(filterStatus == .have ? "NO FIGURES YET" : "EMPTY WISHLIST")
+                                .font(.system(.headline, design: .default, weight: .semibold))
+                                .textCase(.uppercase)
+                                .tracking(CollectorTheme.trackingWide)
+                                .foregroundStyle(CollectorTheme.textSecondary)
+                            
+                            Text(emptyMessage)
+                                .font(.subheadline)
+                                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
+                                .multilineTextAlignment(.center)
                         }
-                        .onChange(of: selectedLine) { _, _ in
-                            // Reset scroll to top when category changes
-                            withAnimation {
-                                proxy.scrollTo("top", anchor: .top)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        // Figure Grid
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                // Count header
+                                HStack {
+                                    Text("\(filteredFigures.count) FIGURES")
+                                        .font(.system(.caption, design: .monospaced, weight: .semibold))
+                                        .textCase(.uppercase)
+                                        .tracking(1)
+                                        .foregroundStyle(CollectorTheme.textSecondary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal)
+                                .padding(.top, 12)
+                                .id("top")
+                                
+                                LazyVGrid(columns: columns, spacing: 16) {
+                                    ForEach(filteredFigures) { figure in
+                                        NavigationLink(destination: FigureDetailView(figure: figure)) {
+                                            FigureCardView(figure: figure)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .id(figure.id)
+                                    }
+                                }
+                                .padding()
+                            }
+                            .onChange(of: selectedLine) { _, _ in
+                                withAnimation {
+                                    proxy.scrollTo("top", anchor: .top)
+                                }
                             }
                         }
                     }
@@ -109,7 +126,7 @@ struct FilteredFigureView: View {
                     } label: {
                         Image(systemName: "arrow.up.arrow.down.circle")
                             .font(.title2)
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(CollectorTheme.accentGold)
                     }
                 }
             }

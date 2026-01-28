@@ -86,37 +86,42 @@ struct FigureGridView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Line Picker - Big buttons for kids!
-                LinePickerView(selectedLine: $selectedLine)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+            ZStack {
+                // Dark background
+                CollectorTheme.background
+                    .ignoresSafeArea()
                 
-                // Figure Grid
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 20) {
-                            ForEach(filteredFigures) { figure in
-                                NavigationLink(destination: FigureDetailView(figure: figure)) {
-                                    FigureCardView(figure: figure)
+                VStack(spacing: 0) {
+                    // Line Picker - Premium style
+                    LinePickerView(selectedLine: $selectedLine)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                    
+                    // Figure Grid
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVGrid(columns: columns, spacing: 16) {
+                                ForEach(filteredFigures) { figure in
+                                    NavigationLink(destination: FigureDetailView(figure: figure)) {
+                                        FigureCardView(figure: figure)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .id(figure.id)
                                 }
-                                .buttonStyle(.plain)
-                                .id(figure.id)
                             }
+                            .padding()
+                            .id("top")
                         }
-                        .padding()
-                        .id("top") // Add ID to top of content for scrolling
-                    }
-                    .onChange(of: selectedLine) { _, _ in
-                        // Reset scroll to top when category changes
-                        withAnimation {
-                            proxy.scrollTo("top", anchor: .top)
+                        .onChange(of: selectedLine) { _, _ in
+                            withAnimation {
+                                proxy.scrollTo("top", anchor: .top)
+                            }
                         }
                     }
                 }
             }
-            .navigationTitle("My Action Figures! 🦸")
-            .searchable(text: $searchText, prompt: "Find a figure...")
+            .navigationTitle("Collection")
+            .searchable(text: $searchText, prompt: "Search figures...")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 12) {
@@ -131,14 +136,14 @@ struct FigureGridView: View {
                         } label: {
                             Image(systemName: "arrow.up.arrow.down.circle")
                                 .font(.title2)
-                                .foregroundStyle(.purple)
+                                .foregroundStyle(CollectorTheme.accentGold)
                         }
                         
                         // Add button
                         NavigationLink(destination: AddFigureView()) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title2)
-                                .foregroundStyle(.purple)
+                                .foregroundStyle(CollectorTheme.accentGold)
                         }
                     }
                 }
@@ -154,13 +159,13 @@ struct LinePickerView: View {
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 // All button
                 LineButton(
                     title: "All",
                     emoji: "🌟",
                     isSelected: selectedLine == nil,
-                    color: .purple
+                    color: CollectorTheme.accentGold
                 ) {
                     selectedLine = nil
                 }
@@ -183,21 +188,14 @@ struct LinePickerView: View {
     
     private func colorForLine(_ line: FigureLine) -> Color {
         switch line {
-        // DC Lines
-        case .dcMultiverse: return .blue
-        case .dcSuperPowers: return .purple
-        case .dcRetro: return .cyan
-        case .dcDirect: return .indigo
-        
-        // MOTU Lines
-        case .motuOrigins: return .orange
-        case .motuMasterverse: return .yellow
-        
-        // Marvel
-        case .marvelLegends: return .red
-        
-        // Star Wars
-        case .starWarsBlackSeries: return Color(red: 0.2, green: 0.2, blue: 0.3) // Dark blue-gray instead of black
+        case .dcMultiverse: return Color(hex: "4A90D9")
+        case .dcSuperPowers: return Color(hex: "9B59B6")
+        case .dcRetro: return Color(hex: "00BCD4")
+        case .dcDirect: return Color(hex: "5C6BC0")
+        case .motuOrigins: return Color(hex: "FF9800")
+        case .motuMasterverse: return Color(hex: "FFC107")
+        case .marvelLegends: return Color(hex: "E53935")
+        case .starWarsBlackSeries: return Color(hex: "607D8B")
         }
     }
 }
@@ -213,30 +211,38 @@ struct LineButton: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Text(emoji)
-                    .font(.title)
+                    .font(.title2)
                 Text(title)
-                    .font(.caption)
-                    .fontWeight(.bold)
+                    .font(.system(.caption2, design: .default, weight: .semibold))
+                    .textCase(.uppercase)
+                    .tracking(0.5)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
             }
-            .frame(minWidth: 80)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(isSelected ? color : color.opacity(0.2))
-            .foregroundStyle(isSelected ? .white : color)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .frame(minWidth: 75)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 10)
+            .background(
+                isSelected 
+                    ? color.opacity(0.3)
+                    : CollectorTheme.surfaceBackground
+            )
+            .foregroundStyle(isSelected ? color : CollectorTheme.textSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(color, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(
+                        isSelected ? color.opacity(0.6) : CollectorTheme.cardStrokeColor,
+                        lineWidth: isSelected ? 1.5 : 1
+                    )
             )
         }
-        .scaleEffect(isSelected ? 1.05 : 1.0)
-        .animation(.spring(response: 0.3), value: isSelected)
+        .scaleEffect(isSelected ? 1.02 : 1.0)
+        .animation(.spring(response: 0.25), value: isSelected)
     }
 }
 
-// MARK: - Figure Card
+// MARK: - Figure Card (Bento Style)
 
 struct FigureCardView: View {
     @EnvironmentObject var dataStore: FigureDataStore
@@ -244,87 +250,118 @@ struct FigureCardView: View {
     @State private var showingConfetti = false
     
     var body: some View {
-        VStack(spacing: 8) {
-            // Figure Image - Larger for better visibility, respects aspect ratio
-            ZStack(alignment: .topTrailing) {
-                // Background to help images stand out
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.gray.opacity(0.1))
-                    .frame(minHeight: 300)
-                
+        VStack(spacing: 12) {
+            // Figure Image with gradient overlay
+            ZStack(alignment: .bottom) {
                 FigureImageView(imageName: figure.imageName)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 300)
+                    .frame(minHeight: 320)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .contentShape(Rectangle())
                 
-                // Badges overlay
-                VStack(alignment: .trailing, spacing: 4) {
-                    // Platinum badge
-                    if figure.isPlatinum {
-                        PlatinumBadge()
+                // Gradient overlay for text readability
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        .clear,
+                        CollectorTheme.cardBackground.opacity(0.7),
+                        CollectorTheme.cardBackground.opacity(0.95)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 120)
+                .clipShape(
+                    RoundedRectangle(cornerRadius: 16)
+                        .offset(y: 60)
+                )
+                
+                // Bottom content overlay
+                VStack(alignment: .leading, spacing: 6) {
+                    // Series label
+                    if let year = figure.year {
+                        Text("\(figure.line.rawValue) • \(year)")
+                            .seriesLabelStyle()
+                    } else {
+                        Text(figure.line.rawValue)
+                            .seriesLabelStyle()
                     }
-                    // Status Badge
-                    StatusBadge(status: figure.status)
+                    
+                    // Name
+                    Text(figure.name)
+                        .font(.system(.headline, design: .monospaced))
+                        .fontWeight(.bold)
+                        .lineLimit(2)
+                        .foregroundStyle(CollectorTheme.textPrimary)
                 }
-                .padding(8)
-            }
-            
-            // Name
-            Text(figure.name)
-                .font(.headline)
-                .fontWeight(.bold)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
-            
-            // Quick toggle button
-            Button(action: {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    if figure.status == .want {
-                        showingConfetti = true
-                        // Hide confetti after delay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            showingConfetti = false
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+                
+                // Status indicator pill (top-left)
+                VStack {
+                    HStack {
+                        CollectionStatusPill(status: figure.status)
+                        Spacer()
+                        if figure.isPlatinum {
+                            PlatinumBadge()
                         }
                     }
-                    dataStore.toggleStatus(for: figure)
+                    Spacer()
                 }
-            }) {
-                HStack {
-                    Image(systemName: figure.status == .have ? "checkmark.circle.fill" : "star.fill")
-                    Text(figure.status == .have ? "Got It!" : "Want It!")
-                        .fontWeight(.bold)
-                }
-                .font(.subheadline)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(figure.status == .have ? Color.green : Color.orange)
-                .foregroundStyle(.white)
-                .clipShape(Capsule())
+                .padding(10)
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .padding(10)
+        .bentoCard()
         .overlay(
-            // Confetti overlay
             ConfettiView(isShowing: showingConfetti)
+        )
+        .onTapGesture {
+            // Handled by NavigationLink wrapper
+        }
+    }
+}
+
+// MARK: - Collection Status Pill
+
+struct CollectionStatusPill: View {
+    let status: CollectionStatus
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            // Glowing dot
+            Circle()
+                .fill(status == .have ? CollectorTheme.statusHave : CollectorTheme.statusWant)
+                .frame(width: 8, height: 8)
+                .shadow(
+                    color: status == .have ? CollectorTheme.statusHaveGlow.opacity(0.8) : CollectorTheme.statusWant.opacity(0.6),
+                    radius: 4,
+                    x: 0,
+                    y: 0
+                )
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial.opacity(0.8))
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .stroke(
+                    status == .have ? CollectorTheme.statusHave.opacity(0.3) : CollectorTheme.statusWant.opacity(0.3),
+                    lineWidth: 1
+                )
         )
     }
 }
 
-// MARK: - Status Badge
+// MARK: - Status Badge (Legacy - kept for compatibility)
 
 struct StatusBadge: View {
     let status: CollectionStatus
     
     var body: some View {
-        Text(status.emoji)
-            .font(.title)
-            .padding(8)
-            .background(.ultraThinMaterial)
-            .clipShape(Circle())
+        CollectionStatusPill(status: status)
     }
 }
 
@@ -334,28 +371,43 @@ struct PlatinumBadge: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "sparkles")
-                .font(.caption)
+                .font(.system(size: 8))
             Text("PLATINUM")
-                .font(.system(size: 8, weight: .bold))
+                .font(.system(size: 8, weight: .bold, design: .default))
+                .tracking(0.5)
         }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 4)
+        .foregroundStyle(CollectorTheme.accentPlatinum)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
         .background(
             LinearGradient(
-                colors: [Color(red: 0.7, green: 0.7, blue: 0.9), Color(red: 0.5, green: 0.5, blue: 0.7)],
+                colors: [
+                    Color(hex: "4A4A5A").opacity(0.9),
+                    Color(hex: "3A3A4A").opacity(0.9)
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
         .clipShape(Capsule())
-        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+        .overlay(
+            Capsule()
+                .stroke(
+                    LinearGradient(
+                        colors: [CollectorTheme.accentPlatinum.opacity(0.4), CollectorTheme.accentPlatinum.opacity(0.1)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(color: CollectorTheme.accentPlatinum.opacity(0.2), radius: 4, x: 0, y: 0)
     }
 }
 
 // MARK: - Figure Image
 
-// MARK: - Figure Image (Upgraded for Web URLs)
+// MARK: - Figure Image (Upgraded for Web URLs with Premium Styling)
 
 struct FigureImageView: View {
     let imageName: String
@@ -373,13 +425,15 @@ struct FigureImageView: View {
                         .frame(maxHeight: .infinity)
                 } else if imageLoader.isLoading {
                     ZStack {
-                        Color.gray.opacity(0.1)
-                        ProgressView() // Spinner while loading
+                        CollectorTheme.surfaceBackground
+                        ProgressView()
+                            .tint(CollectorTheme.textSecondary)
                     }
                 } else {
                     placeholder
                 }
             }
+            .contentShape(Rectangle())
             .onAppear {
                 imageLoader.load(url: url)
             }
@@ -390,17 +444,24 @@ struct FigureImageView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(maxWidth: .infinity)
                 .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
         }
     }
     
     // A simple placeholder if the image fails to load
     var placeholder: some View {
         ZStack {
-            Color.gray.opacity(0.1)
-            Image(systemName: "photo")
-                .font(.largeTitle)
-                .foregroundStyle(.gray.opacity(0.5))
+            CollectorTheme.surfaceBackground
+            VStack(spacing: 8) {
+                Image(systemName: "photo")
+                    .font(.largeTitle)
+                    .foregroundStyle(CollectorTheme.textSecondary.opacity(0.5))
+                Text("No Image")
+                    .font(.caption)
+                    .foregroundStyle(CollectorTheme.textSecondary.opacity(0.3))
+            }
         }
+        .contentShape(Rectangle())
     }
 }
 
