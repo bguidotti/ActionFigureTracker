@@ -15,6 +15,7 @@ struct FigureDetailView: View {
     @State private var notes: String = ""
     @State private var showingConfetti = false
     @State private var showingDeleteAlert = false
+    @State private var showingImagePicker = false
     
     // Get the current figure from dataStore for live updates
     var currentFigure: ActionFigure {
@@ -65,6 +66,22 @@ struct FigureDetailView: View {
                                 // Platinum badge
                                 if currentFigure.isPlatinum {
                                     PlatinumBadge()
+                                }
+                                
+                                // Edit Image button
+                                Button(action: {
+                                    showingImagePicker = true
+                                }) {
+                                    Image(systemName: "photo.badge.arrow.down")
+                                        .font(.title3)
+                                        .foregroundStyle(CollectorTheme.accentGold)
+                                        .padding(12)
+                                        .background(.ultraThinMaterial.opacity(0.8))
+                                        .clipShape(Circle())
+                                        .overlay(
+                                            Circle()
+                                                .stroke(CollectorTheme.accentGold.opacity(0.3), lineWidth: 1)
+                                        )
                                 }
                                 
                                 // Favorite button
@@ -235,6 +252,10 @@ struct FigureDetailView: View {
         }
         .onAppear {
             notes = currentFigure.notes
+        }
+        .sheet(isPresented: $showingImagePicker) {
+            ImageSearchView(figure: figure)
+                .environmentObject(dataStore)
         }
     }
 }

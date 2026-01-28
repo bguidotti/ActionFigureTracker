@@ -136,6 +136,13 @@ class FigureDataStore: ObservableObject {
         }
     }
     
+    func updateImage(for figure: ActionFigure, imageURL: String) {
+        if let index = figures.firstIndex(where: { $0.id == figure.id }) {
+            figures[index].imageName = imageURL
+            saveFigures()
+        }
+    }
+    
     func addFigure(_ figure: ActionFigure) {
         figures.append(figure)
         saveFigures()
