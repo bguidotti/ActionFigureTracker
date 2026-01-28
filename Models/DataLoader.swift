@@ -24,13 +24,37 @@ class DataLoader {
             let rawFigures = try decoder.decode([RawFigure].self, from: data)
             
             // 4. Convert to your app's ActionFigure format
-            return rawFigures.map { raw in
-                ActionFigure(
+            // Use year field to preserve CSV order, or position for figures without year
+            let calendar = Calendar.current
+            let baseDateForNoYear = Date()
+            
+            return rawFigures.enumerated().map { index, raw in
+                // Create date based on year (preserves CSV order) or use position for figures without year
+                let dateAdded: Date
+                if let year = raw.year {
+                    // Use year to create a date - this preserves the CSV order
+                    // Use January 1st of that year, with a small offset based on index to maintain order within same year
+                    var components = DateComponents()
+                    components.year = year
+                    components.month = 1
+                    components.day = 1
+                    components.hour = 0
+                    components.minute = 0
+                    components.second = index % 86400 // Small offset to maintain order within same year
+                    dateAdded = calendar.date(from: components) ?? baseDateForNoYear.addingTimeInterval(TimeInterval(-index))
+                } else {
+                    // For figures without year, use a date far in the future so they appear after dated figures
+                    // But maintain their relative order
+                    dateAdded = baseDateForNoYear.addingTimeInterval(TimeInterval(1000000 - index))
+                }
+                
+                return ActionFigure(
                     name: raw.name,
                     line: determineLine(from: raw.series),
-                    wave: nil, // The scrape didn't capture wave names, which is fine
+                    wave: raw.wave, // Preserve wave from CSV
                     imageName: raw.imageString,
-                    status: raw.isCollected ? .have : .want
+                    status: raw.isCollected ? .have : .want,
+                    dateAdded: dateAdded
                 )
             }
         } catch {
@@ -90,4 +114,6 @@ struct RawFigure: Codable {
     let series: String
     let imageString: String
     let isCollected: Bool
+    let year: Int?        // Optional: Year from CSV
+    let wave: String?     // Optional: Wave from CSV
 }

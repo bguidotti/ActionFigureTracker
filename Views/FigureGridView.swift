@@ -32,9 +32,27 @@ struct FigureGridView: View {
     private func sortFigures(_ figures: [ActionFigure], by option: SortOption) -> [ActionFigure] {
         switch option {
         case .newestFirst:
-            return figures.sorted { $0.dateAdded > $1.dateAdded } // Newest first (descending)
+            // Create indexed array to preserve original order when dates are equal
+            let indexed = figures.enumerated().map { (index: $0.offset, figure: $0.element) }
+            return indexed.sorted { first, second in
+                // Primary sort: by date (newest first)
+                if first.figure.dateAdded != second.figure.dateAdded {
+                    return first.figure.dateAdded > second.figure.dateAdded
+                }
+                // Secondary sort: preserve original order (use index)
+                return first.index < second.index
+            }.map { $0.figure }
         case .oldestFirst:
-            return figures.sorted { $0.dateAdded < $1.dateAdded } // Oldest first (ascending)
+            // Create indexed array to preserve original order when dates are equal
+            let indexed = figures.enumerated().map { (index: $0.offset, figure: $0.element) }
+            return indexed.sorted { first, second in
+                // Primary sort: by date (oldest first)
+                if first.figure.dateAdded != second.figure.dateAdded {
+                    return first.figure.dateAdded < second.figure.dateAdded
+                }
+                // Secondary sort: preserve original order (use index)
+                return first.index < second.index
+            }.map { $0.figure }
         case .alphabetical:
             return figures.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         case .reverseAlphabetical:
