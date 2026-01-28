@@ -242,8 +242,9 @@ def search_legendsverse(query: str) -> list:
                 continue
             seen.add(src)
             
-            # Get higher res image
-            full_src = src.replace('-card.jpg', '.jpg').replace('-thumb.jpg', '.jpg')
+            # Keep the original URL - the card/thumb versions are what actually exist
+            # Don't try to convert to "full size" as those URLs don't exist
+            full_src = src
             
             # Try to get title
             alt = img.get('alt', '') or img.get('title', '')

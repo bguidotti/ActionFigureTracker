@@ -503,34 +503,55 @@ struct ImagePreviewSheet: View {
     let onConfirm: () -> Void
     let onCancel: () -> Void
     
+    // Force a unique ID for each preview to ensure fresh load
+    @State private var loadID = UUID()
+    
     var body: some View {
         NavigationStack {
             ZStack {
                 CollectorTheme.background.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    // Large preview
+                    // Large preview - use .id() to force fresh load in sheet context
                     AsyncImage(url: URL(string: imageResult.url)) { phase in
                         switch phase {
                         case .success(let image):
                             image
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                        case .failure:
+                        case .failure(let error):
                             VStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle")
                                     .font(.largeTitle)
                                     .foregroundStyle(.red)
                                 Text("Failed to load image")
                                     .foregroundStyle(CollectorTheme.textSecondary)
+                                Text(error.localizedDescription)
+                                    .font(.caption2)
+                                    .foregroundStyle(CollectorTheme.textSecondary.opacity(0.5))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                                
+                                // Retry button
+                                Button("Retry") {
+                                    loadID = UUID()
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(CollectorTheme.accentGold)
                             }
                         case .empty:
-                            ProgressView()
-                                .scaleEffect(1.5)
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                Text("Loading image...")
+                                    .font(.caption)
+                                    .foregroundStyle(CollectorTheme.textSecondary)
+                            }
                         @unknown default:
                             EmptyView()
                         }
                     }
+                    .id(loadID) // Force fresh load
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 350)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
