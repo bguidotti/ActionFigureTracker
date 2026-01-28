@@ -619,7 +619,11 @@ struct ImagePreviewSheet: View {
     
     /// Load image using URLSession - follows Apple's async/await best practices
     private func loadImage() async {
-        guard let url = URL(string: imageResult.url) else {
+        let urlString = imageResult.url
+        print("🖼️ [ImagePreview] Starting load for: \(urlString)")
+        
+        guard let url = URL(string: urlString) else {
+            print("🖼️ [ImagePreview] ERROR: Invalid URL")
             errorMessage = "Invalid URL"
             isLoading = false
             return
@@ -631,27 +635,36 @@ struct ImagePreviewSheet: View {
         
         do {
             var request = URLRequest(url: url)
-            request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
+            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", forHTTPHeaderField: "User-Agent")
+            request.setValue("image/webp,image/apng,image/*,*/*;q=0.8", forHTTPHeaderField: "Accept")
+            request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
             request.cachePolicy = .reloadIgnoringLocalCacheData
-            request.timeoutInterval = 20
+            request.timeoutInterval = 30
             
+            print("🖼️ [ImagePreview] Sending request...")
             let (data, response) = try await URLSession.shared.data(for: request)
+            print("🖼️ [ImagePreview] Got response, data size: \(data.count) bytes")
             
             // Check for cancellation
             try Task.checkCancellation()
             
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
-                errorMessage = "Server error"
-                isLoading = false
-                return
+            if let httpResponse = response as? HTTPURLResponse {
+                print("🖼️ [ImagePreview] HTTP status: \(httpResponse.statusCode)")
+                guard httpResponse.statusCode == 200 else {
+                    errorMessage = "HTTP \(httpResponse.statusCode)"
+                    isLoading = false
+                    return
+                }
             }
             
             guard let rawImage = UIImage(data: data) else {
+                print("🖼️ [ImagePreview] ERROR: Could not create UIImage from data")
                 errorMessage = "Invalid image data"
                 isLoading = false
                 return
             }
+            
+            print("🖼️ [ImagePreview] Created UIImage: \(rawImage.size)")
             
             // Prepare for display off main thread (Apple recommended)
             let displayImage = await rawImage.byPreparingForDisplay()
@@ -660,10 +673,12 @@ struct ImagePreviewSheet: View {
             
             loadedImage = displayImage ?? rawImage
             isLoading = false
+            print("🖼️ [ImagePreview] SUCCESS - Image loaded!")
             
         } catch is CancellationError {
-            // View disappeared, ignore
+            print("🖼️ [ImagePreview] Task was cancelled")
         } catch {
+            print("🖼️ [ImagePreview] ERROR: \(error)")
             errorMessage = error.localizedDescription
             isLoading = false
         }
