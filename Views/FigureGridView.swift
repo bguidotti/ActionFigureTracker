@@ -32,25 +32,49 @@ struct FigureGridView: View {
     private func sortFigures(_ figures: [ActionFigure], by option: SortOption) -> [ActionFigure] {
         switch option {
         case .newestFirst:
-            // Create indexed array to preserve original order when dates are equal
+            // Create indexed array to preserve original order
             let indexed = figures.enumerated().map { (index: $0.offset, figure: $0.element) }
             return indexed.sorted { first, second in
-                // Primary sort: by date (newest first)
+                // Primary sort: by year (if available), then by date
+                if let year1 = first.figure.year, let year2 = second.figure.year {
+                    if year1 != year2 {
+                        return year1 > year2 // Newest year first
+                    }
+                } else if first.figure.year != nil {
+                    return true // Figures with year come before those without
+                } else if second.figure.year != nil {
+                    return false
+                }
+                
+                // Secondary sort: by date
                 if first.figure.dateAdded != second.figure.dateAdded {
                     return first.figure.dateAdded > second.figure.dateAdded
                 }
-                // Secondary sort: preserve original order (use index)
+                
+                // Tertiary sort: preserve original order (use index)
                 return first.index < second.index
             }.map { $0.figure }
         case .oldestFirst:
-            // Create indexed array to preserve original order when dates are equal
+            // Create indexed array to preserve original order
             let indexed = figures.enumerated().map { (index: $0.offset, figure: $0.element) }
             return indexed.sorted { first, second in
-                // Primary sort: by date (oldest first)
+                // Primary sort: by year (if available), then by date
+                if let year1 = first.figure.year, let year2 = second.figure.year {
+                    if year1 != year2 {
+                        return year1 < year2 // Oldest year first
+                    }
+                } else if first.figure.year != nil {
+                    return true // Figures with year come before those without
+                } else if second.figure.year != nil {
+                    return false
+                }
+                
+                // Secondary sort: by date
                 if first.figure.dateAdded != second.figure.dateAdded {
                     return first.figure.dateAdded < second.figure.dateAdded
                 }
-                // Secondary sort: preserve original order (use index)
+                
+                // Tertiary sort: preserve original order (use index)
                 return first.index < second.index
             }.map { $0.figure }
         case .alphabetical:

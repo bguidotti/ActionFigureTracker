@@ -97,6 +97,7 @@ struct ActionFigure: Identifiable, Codable {
     var notes: String
     var isFavorite: Bool
     var dateAdded: Date
+    var year: Int?              // Year from CSV - used for proper sorting
     
     init(
         id: UUID = UUID(),
@@ -107,7 +108,8 @@ struct ActionFigure: Identifiable, Codable {
         status: CollectionStatus = .want,
         notes: String = "",
         isFavorite: Bool = false,
-        dateAdded: Date = Date()
+        dateAdded: Date = Date(),
+        year: Int? = nil
     ) {
         self.id = id
         self.name = name
@@ -118,6 +120,7 @@ struct ActionFigure: Identifiable, Codable {
         self.notes = notes
         self.isFavorite = isFavorite
         self.dateAdded = dateAdded
+        self.year = year
     }
     
     /// Check if this is a platinum/chase variant

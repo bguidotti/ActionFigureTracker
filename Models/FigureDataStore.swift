@@ -19,6 +19,53 @@ class FigureDataStore: ObservableObject {
         if figures.isEmpty {
             figures = DataLoader.loadFigures()
             saveFigures()
+        } else {
+            // Migrate existing data: add year information from JSON if missing
+            migrateYearDataIfNeeded()
+        }
+    }
+    
+    /// Migrate existing saved data to include year information from JSON
+    private func migrateYearDataIfNeeded() {
+        // Check if any figures are missing year data
+        let needsMigration = figures.contains { $0.year == nil }
+        
+        if needsMigration {
+            // Load fresh data from JSON to get year information
+            let jsonFigures = DataLoader.loadFigures()
+            
+            // Create a lookup by name and line
+            var yearLookup: [String: Int] = [:]
+            for jsonFig in jsonFigures {
+                if let year = jsonFig.year {
+                    let key = "\(jsonFig.name)|\(jsonFig.line.rawValue)"
+                    yearLookup[key] = year
+                }
+            }
+            
+            // Update existing figures with year data
+            var updated = false
+            for i in 0..<figures.count {
+                let key = "\(figures[i].name)|\(figures[i].line.rawValue)"
+                if figures[i].year == nil, let year = yearLookup[key] {
+                    figures[i].year = year
+                    // Also update dateAdded based on year to ensure proper sorting
+                    let calendar = Calendar.current
+                    var components = DateComponents()
+                    components.year = year
+                    components.month = 1
+                    components.day = 1
+                    if let newDate = calendar.date(from: components) {
+                        figures[i].dateAdded = newDate.addingTimeInterval(TimeInterval(i % 86400))
+                    }
+                    updated = true
+                }
+            }
+            
+            if updated {
+                saveFigures()
+                print("✅ Migrated year data for existing figures")
+            }
         }
     }
     

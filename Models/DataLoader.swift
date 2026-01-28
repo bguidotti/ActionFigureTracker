@@ -54,7 +54,8 @@ class DataLoader {
                     wave: raw.wave, // Preserve wave from CSV
                     imageName: raw.imageString,
                     status: raw.isCollected ? .have : .want,
-                    dateAdded: dateAdded
+                    dateAdded: dateAdded,
+                    year: raw.year // Preserve year from CSV
                 )
             }
         } catch {
