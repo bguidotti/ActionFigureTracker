@@ -189,6 +189,7 @@ struct LinePickerView: View {
     private func colorForLine(_ line: FigureLine) -> Color {
         switch line {
         case .dcMultiverse: return Color(hex: "4A90D9")
+        case .dcPagePunchers: return Color(hex: "6B8DD6")
         case .dcSuperPowers: return Color(hex: "9B59B6")
         case .dcRetro: return Color(hex: "00BCD4")
         case .dcDirect: return Color(hex: "5C6BC0")
