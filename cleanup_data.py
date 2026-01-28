@@ -20,6 +20,13 @@ ACCESSORY_ONLY_PATTERNS = [
     r'^Batarang',
     r'^Kryptonite spear',
     r'^Display',
+    r'^Stand$',
+    r'^Dagger$',
+    r'^2 alternate hands',
+    r'^Alternate hands',
+    r'^Flight stand',
+    r'^Art card',
+    r'and card$',  # Entries ending with "and card"
 ]
 
 # Patterns that indicate accessories in name (after dash)
