@@ -124,11 +124,31 @@ struct ImageSearchView: View {
                 .environmentObject(dataStore)
             }
             .onAppear {
-                // Pre-fill search with figure name and auto-search
-                searchQuery = figure.name
+                // Pre-fill search with figure name + line context for better matching
+                var query = figure.name
                     .replacingOccurrences(of: "(", with: "")
                     .replacingOccurrences(of: ")", with: "")
                     .trimmingCharacters(in: .whitespaces)
+                
+                // Add line-specific context to help distinguish results
+                switch figure.line {
+                case .dcMultiverse:
+                    query += " Multiverse"
+                case .dcPagePunchers:
+                    query += " Page Punchers"
+                case .dcSuperPowers:
+                    query += " Super Powers"
+                case .dcRetro:
+                    query += " Retro"
+                case .motuOrigins:
+                    query += " Origins"
+                case .motuMasterverse:
+                    query += " Masterverse"
+                default:
+                    break
+                }
+                
+                searchQuery = query
                 
                 // Automatically search on appear
                 performSearch()

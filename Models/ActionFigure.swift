@@ -11,6 +11,7 @@ import Foundation
 enum FigureLine: String, CaseIterable, Codable, Identifiable {
     // DC Lines
     case dcMultiverse = "DC Multiverse"
+    case dcPagePunchers = "DC Page Punchers"
     case dcSuperPowers = "DC Super Powers"
     case dcRetro = "DC Retro"
     case dcDirect = "DC Direct"
@@ -31,6 +32,7 @@ enum FigureLine: String, CaseIterable, Codable, Identifiable {
     var emoji: String {
         switch self {
         case .dcMultiverse: return "🦇"
+        case .dcPagePunchers: return "📚"
         case .dcSuperPowers: return "💪"
         case .dcRetro: return "📼"
         case .dcDirect: return "🎯"
@@ -45,6 +47,7 @@ enum FigureLine: String, CaseIterable, Codable, Identifiable {
     var colorName: String {
         switch self {
         case .dcMultiverse: return "DCBlue"
+        case .dcPagePunchers: return "DCBlue"  // Same as Multiverse
         case .dcSuperPowers: return "DCPower"
         case .dcRetro: return "DCRetro"
         case .dcDirect: return "DCDirect"
@@ -95,6 +98,7 @@ struct ActionFigure: Identifiable, Codable {
     var imageName: String       // Name of image in Assets
     var status: CollectionStatus
     var notes: String
+    var accessories: String?    // Accessories that come with the figure
     var isFavorite: Bool
     var dateAdded: Date
     var year: Int?              // Year from CSV - used for proper sorting
@@ -107,6 +111,7 @@ struct ActionFigure: Identifiable, Codable {
         imageName: String,
         status: CollectionStatus = .want,
         notes: String = "",
+        accessories: String? = nil,
         isFavorite: Bool = false,
         dateAdded: Date = Date(),
         year: Int? = nil
@@ -118,6 +123,7 @@ struct ActionFigure: Identifiable, Codable {
         self.imageName = imageName
         self.status = status
         self.notes = notes
+        self.accessories = accessories
         self.isFavorite = isFavorite
         self.dateAdded = dateAdded
         self.year = year

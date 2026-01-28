@@ -54,6 +54,7 @@ class DataLoader {
                     wave: raw.wave, // Preserve wave from CSV
                     imageName: raw.imageString,
                     status: raw.isCollected ? .have : .want,
+                    accessories: raw.accessories, // Preserve accessories from CSV
                     dateAdded: dateAdded,
                     year: raw.year // Preserve year from CSV
                 )
@@ -76,6 +77,11 @@ class DataLoader {
         // Check for MOTU Masterverse
         if lower.contains("masters-of-the-universe-masterverse") || lower == "masters-of-the-universe-masterverse" || lower.contains("masterverse") {
             return .motuMasterverse
+        }
+        
+        // Check for DC Page Punchers
+        if lower == "dc-page-punchers" || lower.contains("dc-page-punchers") || lower.contains("page-punchers") {
+            return .dcPagePunchers
         }
         
         // Check for DC Super Powers
@@ -115,6 +121,7 @@ struct RawFigure: Codable {
     let series: String
     let imageString: String
     let isCollected: Bool
-    let year: Int?        // Optional: Year from CSV
-    let wave: String?     // Optional: Wave from CSV
+    let year: Int?          // Optional: Year from CSV
+    let wave: String?       // Optional: Wave from CSV
+    let accessories: String? // Optional: Accessories from CSV
 }

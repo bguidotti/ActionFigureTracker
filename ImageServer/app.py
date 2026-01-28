@@ -44,7 +44,8 @@ VISUAL_GUIDES = {
 
 # Map iOS app line names to visual guide keys
 LINE_TO_GUIDES = {
-    'DC Multiverse': ['multiverse', 'page_punchers'],  # Page Punchers are part of Multiverse
+    'DC Multiverse': ['multiverse'],
+    'DC Page Punchers': ['page_punchers'],  # Separate line for Page Punchers
     'DC Super Powers': ['super_powers'],
     'DC Retro': ['retro_66', 'batman_animated'],  # Both retro style
     'DC Direct': ['multiverse'],  # Fall back to Multiverse

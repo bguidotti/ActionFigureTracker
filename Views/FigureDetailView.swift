@@ -195,6 +195,31 @@ struct FigureDetailView: View {
                     .animation(.spring(response: 0.3), value: showingConfetti)
                     .padding(.horizontal)
                     
+                    // Accessories Section (if available)
+                    if let accessories = currentFigure.accessories, !accessories.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("ACCESSORIES")
+                                .font(.system(.subheadline, design: .default, weight: .semibold))
+                                .textCase(.uppercase)
+                                .tracking(CollectorTheme.trackingWide)
+                                .foregroundStyle(CollectorTheme.textSecondary)
+                            
+                            Text(accessories)
+                                .font(.system(.body, design: .default))
+                                .foregroundStyle(CollectorTheme.textPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(14)
+                                .background(CollectorTheme.surfaceBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(CollectorTheme.cardStrokeColor, lineWidth: 1)
+                                )
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                    }
+                    
                     // Notes Section
                     VStack(alignment: .leading, spacing: 12) {
                         Text("NOTES")

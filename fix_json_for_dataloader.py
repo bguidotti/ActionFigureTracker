@@ -13,6 +13,7 @@ JSON_FILE = r'c:\Code\ActionFigureTracker\Models\all_figures.json'
 # Map line values back to series format that DataLoader expects
 LINE_TO_SERIES = {
     'DC Multiverse': 'dc-multiverse',
+    'DC Page Punchers': 'dc-page-punchers',
     'DC Super Powers': 'dc-super-powers',
     'DC Retro': 'dc-retro',
     'DC Direct': 'dc-direct',
@@ -44,6 +45,7 @@ def fix_figure(fig, index):
         'isCollected': is_collected,
         'year': fig.get('year'),
         'wave': fig.get('wave'),
+        'accessories': fig.get('accessories', ''),
     }
 
 

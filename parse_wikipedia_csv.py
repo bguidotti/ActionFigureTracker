@@ -295,6 +295,7 @@ def main():
                         if figures and figures[-1]['series'] == 'dc-page-punchers':
                             base_name = figures[-1]['name'].split(' (')[0]
                             variant_name = f"{base_name} ({pp_description})"
+                            acc_list = parse_accessories(pp_accessories)
                             figure = {
                                 'id': str(uuid.uuid4()),
                                 'name': variant_name,
@@ -302,7 +303,7 @@ def main():
                                 'wave': current_wave,
                                 'category': current_category,
                                 'year': parse_wave_to_year(current_wave),
-                                'accessories': parse_accessories(pp_accessories),
+                                'accessories': ', '.join(acc_list) if acc_list else '',
                                 'status': 'want',
                                 'isFavorite': False,
                                 'isPlatinum': 'platinum' in pp_description.lower(),
@@ -321,6 +322,7 @@ def main():
                 if any(kw in full_name.lower() for kw in skip_keywords):
                     continue
                 
+                acc_list = parse_accessories(pp_accessories)
                 figure = {
                     'id': str(uuid.uuid4()),
                     'name': full_name,
@@ -328,7 +330,7 @@ def main():
                     'wave': current_wave,
                     'category': current_category,
                     'year': parse_wave_to_year(current_wave),
-                    'accessories': parse_accessories(pp_accessories),
+                    'accessories': ', '.join(acc_list) if acc_list else '',
                     'status': 'want',
                     'isFavorite': False,
                     'isPlatinum': 'platinum' in pp_description.lower() if pp_description else False,
@@ -368,6 +370,7 @@ def main():
                     variant_name = col_d
                     is_platinum = False
                 
+                acc_list = parse_accessories(col_c)
                 figure = {
                     'id': str(uuid.uuid4()),
                     'name': variant_name if not col_b else create_figure_name(col_b, col_d),
@@ -375,7 +378,7 @@ def main():
                     'wave': current_wave,
                     'category': current_category,
                     'year': parse_wave_to_year(current_wave),
-                    'accessories': parse_accessories(col_c),
+                    'accessories': ', '.join(acc_list) if acc_list else '',
                     'status': 'want',
                     'isFavorite': False,
                     'isPlatinum': 'platinum' in col_d.lower() if col_d else False,
@@ -400,6 +403,7 @@ def main():
             if any(kw in full_name.lower() for kw in skip_keywords):
                 continue
             
+            acc_list = parse_accessories(col_c)
             figure = {
                 'id': str(uuid.uuid4()),
                 'name': full_name,
@@ -407,7 +411,7 @@ def main():
                 'wave': current_wave,
                 'category': current_category,
                 'year': parse_wave_to_year(current_wave),
-                'accessories': parse_accessories(col_c),
+                'accessories': ', '.join(acc_list) if acc_list else '',
                 'status': 'want',
                 'isFavorite': False,
                 'isPlatinum': is_platinum,
@@ -444,7 +448,8 @@ def main():
     for f in figures[:10]:
         print(f"  - {f['name']}")
         if f['accessories']:
-            print(f"    Accessories: {', '.join(f['accessories'][:3])}...")
+            acc_preview = f['accessories'][:80] + '...' if len(f['accessories']) > 80 else f['accessories']
+            print(f"    Accessories: {acc_preview}")
     
     # Load existing JSON to preserve other series
     print(f"\nLoading existing JSON from {JSON_FILE}...")
