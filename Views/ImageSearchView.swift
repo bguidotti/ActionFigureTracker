@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 import UIKit
 
 // MARK: - API Response Models
@@ -504,99 +503,6 @@ struct ImageResultCard: View {
     }
 }
 
-// MARK: - Reliable Image Loader (Apple recommended URLSession pattern)
-
-@MainActor
-class PreviewImageLoader: ObservableObject {
-    @Published var image: UIImage?
-    @Published var isLoading = false
-    @Published var error: String?
-    
-    private var currentTask: Task<Void, Never>?
-    
-    func load(urlString: String) {
-        // Cancel any existing load
-        currentTask?.cancel()
-        
-        guard let url = URL(string: urlString) else {
-            error = "Invalid URL"
-            return
-        }
-        
-        isLoading = true
-        error = nil
-        image = nil
-        
-        currentTask = Task {
-            do {
-                // Use Apple's recommended URLSession.shared.data pattern
-                var request = URLRequest(url: url)
-                request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
-                request.cachePolicy = .reloadIgnoringLocalCacheData  // Fresh load every time
-                request.timeoutInterval = 20
-                
-                let (data, response) = try await URLSession.shared.data(for: request)
-                
-                guard !Task.isCancelled else { return }
-                
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    self.error = "Invalid response"
-                    self.isLoading = false
-                    return
-                }
-                
-                guard httpResponse.statusCode == 200 else {
-                    self.error = "HTTP \(httpResponse.statusCode)"
-                    self.isLoading = false
-                    return
-                }
-                
-                // Decode image off main thread using preparingForDisplay (Apple recommended)
-                guard let rawImage = UIImage(data: data) else {
-                    self.error = "Invalid image data"
-                    self.isLoading = false
-                    return
-                }
-                
-                // preparingForDisplay() decodes the image on a background thread
-                // and returns a version optimized for display
-                let displayImage = await rawImage.byPreparingForDisplay()
-                
-                guard !Task.isCancelled else { return }
-                
-                self.image = displayImage ?? rawImage
-                self.isLoading = false
-                
-            } catch is CancellationError {
-                // Task was cancelled, don't update state
-                return
-            } catch let urlError as URLError {
-                guard !Task.isCancelled else { return }
-                switch urlError.code {
-                case .timedOut:
-                    self.error = "Request timed out"
-                case .notConnectedToInternet:
-                    self.error = "No internet connection"
-                case .cancelled:
-                    return
-                default:
-                    self.error = urlError.localizedDescription
-                }
-                self.isLoading = false
-            } catch {
-                guard !Task.isCancelled else { return }
-                self.error = error.localizedDescription
-                self.isLoading = false
-            }
-        }
-    }
-    
-    func cancel() {
-        currentTask?.cancel()
-        currentTask = nil
-    }
-}
-
 // MARK: - Image Preview Sheet
 
 struct ImagePreviewSheet: View {
@@ -604,7 +510,11 @@ struct ImagePreviewSheet: View {
     let onConfirm: () -> Void
     let onCancel: () -> Void
     
-    @StateObject private var imageLoader = PreviewImageLoader()
+    // Use @State with .task modifier - Apple's recommended pattern for async work
+    @State private var loadedImage: UIImage?
+    @State private var isLoading = true
+    @State private var errorMessage: String?
+    @State private var retryCount = 0
     
     var body: some View {
         NavigationStack {
@@ -612,13 +522,13 @@ struct ImagePreviewSheet: View {
                 CollectorTheme.background.ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    // Large preview using reliable loader
+                    // Large preview
                     Group {
-                        if let uiImage = imageLoader.image {
+                        if let uiImage = loadedImage {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                        } else if imageLoader.isLoading {
+                        } else if isLoading {
                             VStack(spacing: 12) {
                                 ProgressView()
                                     .scaleEffect(1.5)
@@ -626,7 +536,7 @@ struct ImagePreviewSheet: View {
                                     .font(.caption)
                                     .foregroundStyle(CollectorTheme.textSecondary)
                             }
-                        } else if let error = imageLoader.error {
+                        } else if let error = errorMessage {
                             VStack(spacing: 12) {
                                 Image(systemName: "exclamationmark.triangle")
                                     .font(.largeTitle)
@@ -638,14 +548,11 @@ struct ImagePreviewSheet: View {
                                     .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
                                 
                                 Button("Retry") {
-                                    imageLoader.load(urlString: imageResult.url)
+                                    retryCount += 1
                                 }
                                 .buttonStyle(.bordered)
                                 .tint(CollectorTheme.accentGold)
                             }
-                        } else {
-                            // Initial state - loading triggered by onAppear
-                            ProgressView()
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -687,6 +594,8 @@ struct ImagePreviewSheet: View {
                             .background(CollectorTheme.statusHave)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
+                        .disabled(loadedImage == nil)
+                        .opacity(loadedImage == nil ? 0.5 : 1)
                         
                         Button(action: onCancel) {
                             Text("Choose Different Image")
@@ -700,14 +609,63 @@ struct ImagePreviewSheet: View {
             }
             .navigationTitle("Preview")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                // Start loading immediately - PreviewImageLoader handles everything
-                imageLoader.load(urlString: imageResult.url)
+            // Use .task - Apple's recommended async pattern for SwiftUI
+            // It automatically starts when view appears and cancels on disappear
+            .task(id: retryCount) {
+                await loadImage()
             }
-            .onDisappear {
-                // Cancel load if user dismisses
-                imageLoader.cancel()
+        }
+    }
+    
+    /// Load image using URLSession - follows Apple's async/await best practices
+    private func loadImage() async {
+        guard let url = URL(string: imageResult.url) else {
+            errorMessage = "Invalid URL"
+            isLoading = false
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        loadedImage = nil
+        
+        do {
+            var request = URLRequest(url: url)
+            request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.timeoutInterval = 20
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            // Check for cancellation
+            try Task.checkCancellation()
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                errorMessage = "Server error"
+                isLoading = false
+                return
             }
+            
+            guard let rawImage = UIImage(data: data) else {
+                errorMessage = "Invalid image data"
+                isLoading = false
+                return
+            }
+            
+            // Prepare for display off main thread (Apple recommended)
+            let displayImage = await rawImage.byPreparingForDisplay()
+            
+            try Task.checkCancellation()
+            
+            loadedImage = displayImage ?? rawImage
+            isLoading = false
+            
+        } catch is CancellationError {
+            // View disappeared, ignore
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoading = false
         }
     }
 }
