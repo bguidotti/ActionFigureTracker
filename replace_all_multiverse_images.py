@@ -204,6 +204,9 @@ def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
     if normalized in scraped_figures:
         return scraped_figures[normalized]
     
+    # Extract the base character name (before first parenthesis)
+    base_name = re.split(r'\s*[\(\-]', figure_name)[0].strip().lower()
+    
     # Try matching by slug
     slug_from_name = figure_name.lower()
     slug_from_name = re.sub(r'\([^)]*\)', '', slug_from_name)
@@ -214,27 +217,57 @@ def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
         if data['slug'] == slug_from_name:
             return data
     
-    # Try fuzzy matching with high threshold
+    # Try matching base name to slug
+    base_slug = re.sub(r'[^a-z0-9\s]', '', base_name)
+    base_slug = re.sub(r'\s+', '-', base_slug.strip())
+    
+    for key, data in scraped_figures.items():
+        if data['slug'].startswith(base_slug) or base_slug in data['slug']:
+            return data
+    
+    # Try fuzzy matching with lower threshold
     best_match = None
     best_score = 0.0
     
     for key, data in scraped_figures.items():
+        # Match on full name
         score = fuzzy_match(figure_name, data['name'])
-        if score > best_score and score > 0.80:  # 80% threshold
+        if score > best_score and score > 0.65:
             best_score = score
             best_match = data
+        
+        # Also try matching just base names
+        their_base = re.split(r'\s*[\(\-]', data['name'])[0].strip()
+        base_score = fuzzy_match(base_name, their_base.lower())
+        if base_score > 0.85 and base_score > best_score:
+            best_score = base_score
+            best_match = data
     
-    # Try word overlap matching
+    # Try word overlap matching - more flexible
     for key, data in scraped_figures.items():
         our_parts = set(normalize_name(figure_name).split())
         their_parts = set(normalize_name(data['name']).split())
         
+        # Remove common filler words
+        filler = {'the', 'a', 'an', 'of', 'and', 'version', 'variant', 'edition'}
+        our_parts = our_parts - filler
+        their_parts = their_parts - filler
+        
         common = our_parts & their_parts
         if len(common) >= 2:
-            overlap = len(common) / max(len(our_parts), len(their_parts))
-            if overlap > 0.6 and overlap > best_score:
+            # Weight by how much of our name is matched
+            overlap = len(common) / len(our_parts) if our_parts else 0
+            if overlap > 0.5 and overlap > best_score:
                 best_score = overlap
                 best_match = data
+    
+    # Special handling for character variants - try to find any match for the character
+    if not best_match and base_name:
+        # Look for any figure with the same base character name
+        for key, data in scraped_figures.items():
+            their_base = re.split(r'\s*[\(\-]', data['name'])[0].strip().lower()
+            if base_name == their_base:
+                return data  # Return first match for this character
     
     return best_match
 
@@ -247,9 +280,9 @@ def main():
     with open(JSON_FILE, 'r', encoding='utf-8') as f:
         all_figures = json.load(f)
     
-    # Get ALL DC Multiverse figures (not just missing)
-    multiverse_figures = [f for f in all_figures if f.get('series') == 'dc-multiverse']
-    log(f"Found {len(multiverse_figures)} DC Multiverse figures total")
+    # Get ALL DC Multiverse and Page Punchers figures (not just missing)
+    multiverse_figures = [f for f in all_figures if f.get('series') in ['dc-multiverse', 'dc-page-punchers']]
+    log(f"Found {len(multiverse_figures)} DC Multiverse/Page Punchers figures total")
     
     # Scrape both checklist and visual guide for maximum coverage
     log("\n--- Scraping checklist ---")
@@ -319,7 +352,7 @@ def main():
     log("\n" + "="*60)
     log("SUMMARY")
     log("="*60)
-    log(f"Total DC Multiverse figures: {len(multiverse_figures)}")
+    log(f"Total DC figures: {len(multiverse_figures)}")
     log(f"Already using actionfigure411: {already_411}")
     log(f"Updated to actionfigure411: {updated}")
     log(f"Failed to update: {len(failed)}")
