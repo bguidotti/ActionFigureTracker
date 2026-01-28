@@ -317,9 +317,6 @@ struct FigureCardView: View {
         .overlay(
             ConfettiView(isShowing: showingConfetti)
         )
-        .onTapGesture {
-            // Handled by NavigationLink wrapper
-        }
     }
 }
 
