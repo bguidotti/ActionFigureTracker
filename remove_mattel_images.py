@@ -18,6 +18,17 @@ ALL_SCRAPED = os.path.join(DOWNLOADED, 'all_scraped_figures.json')
 SCRAPED = os.path.join(DOWNLOADED, 'scraped_figures.json')
 
 
+def _iter_scraped_entries(data):
+    """Yield (key, entry) from scraped data; supports flat dict or {multiverse, page_punchers} format."""
+    if isinstance(data, dict) and ('multiverse' in data or 'page_punchers' in data):
+        for pool in (data.get('multiverse', {}), data.get('page_punchers', {})):
+            for k, v in pool.items():
+                yield k, v
+    else:
+        for k, v in (data or {}).items():
+            yield k, v
+
+
 def get_mattel_image_urls(scraped_path: str) -> set:
     """Collect image_url values where page_url contains /mattel/"""
     urls = set()
@@ -25,7 +36,7 @@ def get_mattel_image_urls(scraped_path: str) -> set:
         return urls
     with open(scraped_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    for key, entry in data.items():
+    for key, entry in _iter_scraped_entries(data):
         if isinstance(entry, dict) and '/mattel/' in entry.get('page_url', ''):
             url = entry.get('image_url', '')
             if url:
@@ -55,15 +66,21 @@ def main():
     with open(JSON_FILE, 'w', encoding='utf-8') as f:
         json.dump(figures, f, indent=2)
 
-    # Remove Mattel entries from scraped JSONs
+    # Remove Mattel entries from scraped JSONs (support flat or {multiverse, page_punchers} format)
     for scraped_path in (ALL_SCRAPED, SCRAPED):
         if not os.path.exists(scraped_path):
             continue
         with open(scraped_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        before = len(data)
-        data = {k: v for k, v in data.items() if '/mattel/' not in (v.get('page_url') or '')}
-        removed = before - len(data)
+        if isinstance(data, dict) and ('multiverse' in data or 'page_punchers' in data):
+            before = len(data.get('multiverse', {}))
+            data['multiverse'] = {k: v for k, v in (data.get('multiverse') or {}).items()
+                                  if '/mattel/' not in (v.get('page_url') or '')}
+            removed = before - len(data.get('multiverse', {}))
+        else:
+            before = len(data)
+            data = {k: v for k, v in data.items() if '/mattel/' not in (v.get('page_url') or '')}
+            removed = before - len(data)
         if removed:
             with open(scraped_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2)

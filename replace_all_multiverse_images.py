@@ -32,6 +32,7 @@ JSON_FILE = r'c:\Code\ActionFigureTracker\Models\all_figures.json'
 OUTPUT_DIR = r'c:\Code\ActionFigureTracker\downloaded_images'
 VISUAL_GUIDE_BASE = "https://www.actionfigure411.com/dc/multiverse-visual-guide.php"
 CHECKLIST_URL = "https://www.actionfigure411.com/dc/multiverse-checklist.php"
+PAGE_PUNCHERS_VISUAL_GUIDE = "https://www.actionfigure411.com/dc/page-punchers-visual-guide.php"
 BASE_IMAGE_URL = "https://www.actionfigure411.com/dc/images"
 DELAY_BETWEEN_REQUESTS = 0.3  # seconds
 
@@ -181,6 +182,45 @@ def scrape_visual_guide() -> Dict[str, Dict]:
     return figures
 
 
+def scrape_page_punchers_visual_guide() -> Dict[str, Dict]:
+    """
+    Scrape Page Punchers visual guide. Page links directly to images: /dc/images/slug-id.jpg.
+    Name from title when nearby, else from slug (e.g. the-flash-flashpoint -> The Flash Flashpoint).
+    """
+    log("Scraping Page Punchers visual guide...")
+    html = fetch_url(PAGE_PUNCHERS_VISUAL_GUIDE)
+    if not html:
+        log("Failed to fetch Page Punchers visual guide")
+        return {}
+    figures = {}
+    # Direct image links: href="/dc/images/slug-id.jpg"
+    href_pattern = re.compile(r'href="(/dc/images/([a-z0-9-]+)-(\d+)\.jpg)"', re.IGNORECASE)
+    title_pattern = re.compile(r'title="[^"]*Page Punchers[^"]*([^"]+)"', re.IGNORECASE)
+    for m in href_pattern.finditer(html):
+        full_path, slug, fig_id = m.group(1), m.group(2), m.group(3)
+        image_url = f"https://www.actionfigure411.com{full_path}"
+        # Try to find title within 500 chars before href (title often precedes href in HTML)
+        start = max(0, m.start() - 500)
+        chunk = html[start:m.end()]
+        title_m = title_pattern.search(chunk)
+        name = title_m.group(1).strip() if title_m else slug.replace('-', ' ').title()
+        if name.lower().startswith('dc mcfarlane dc page punchers '):
+            name = name[28:].strip()
+        normalized = normalize_name(name)
+        # Key by slug-id so we keep all figures (multiple Flash variants, etc.)
+        key = f"{slug}-{fig_id}"
+        if key not in figures:
+            figures[key] = {
+                'name': name,
+                'slug': slug,
+                'id': fig_id,
+                'image_url': image_url,
+                'page_url': PAGE_PUNCHERS_VISUAL_GUIDE,
+            }
+    log(f"  Found {len(figures)} Page Punchers figures")
+    return figures
+
+
 def normalize_name(name: str) -> str:
     """Normalize a figure name for matching"""
     name = name.lower()
@@ -238,6 +278,9 @@ def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
     for key, data in scraped_figures.items():
         slug = data.get('slug', '')
         if slug == base_slug or slug.startswith(base_slug + '-'):
+            return data
+        # Page Punchers often use "the-flash-...", "the-joker-...", etc.
+        if slug == 'the-' + base_slug or slug.startswith('the-' + base_slug + '-'):
             return data
     
     # Try fuzzy matching with lower threshold
@@ -299,23 +342,25 @@ def main():
     multiverse_figures = [f for f in all_figures if f.get('series') in ['dc-multiverse', 'dc-page-punchers']]
     log(f"Found {len(multiverse_figures)} DC Multiverse/Page Punchers figures total")
     
-    # Scrape both checklist and visual guide for maximum coverage
-    log("\n--- Scraping checklist ---")
+    # Scrape Multiverse (checklist + visual guide) and Page Punchers separately
+    log("\n--- Scraping Multiverse checklist ---")
     checklist_figures = scrape_checklist_for_figures()
     
-    log("\n--- Scraping visual guide ---")
+    log("\n--- Scraping Multiverse visual guide ---")
     visual_guide_figures = scrape_visual_guide()
     
-    # Merge both sources (checklist has better name matching, visual guide has more entries)
-    scraped = {**visual_guide_figures, **checklist_figures}  # checklist overwrites
-    # McFarlane only: drop any Mattel (blue box) entries that slipped in
-    scraped = {k: v for k, v in scraped.items() if '/mattel/' not in (v.get('page_url') or '').lower()}
-    log(f"\nTotal scraped figures (McFarlane only): {len(scraped)}")
+    # Merge Multiverse sources; McFarlane only (no Mattel)
+    scraped_multiverse = {**visual_guide_figures, **checklist_figures}
+    scraped_multiverse = {k: v for k, v in scraped_multiverse.items() if '/mattel/' not in (v.get('page_url') or '').lower()}
+    log(f"\nTotal Multiverse figures (McFarlane only): {len(scraped_multiverse)}")
     
-    # Save scraped data for reference
+    log("\n--- Scraping Page Punchers visual guide ---")
+    scraped_page_punchers = scrape_page_punchers_visual_guide()
+    
+    # Save both pools for reference
     scraped_file = os.path.join(OUTPUT_DIR, 'all_scraped_figures.json')
     with open(scraped_file, 'w', encoding='utf-8') as f:
-        json.dump(scraped, f, indent=2)
+        json.dump({"multiverse": scraped_multiverse, "page_punchers": scraped_page_punchers}, f, indent=2)
     log(f"Saved scraped data to {scraped_file}")
     
     # Match and update ALL figures
@@ -345,8 +390,9 @@ def main():
             already_411 += 1
             continue
         
-        # Try to find a match
-        match = find_best_match(name, scraped)
+        # Use the correct pool: Page Punchers figures only match Page Punchers images; Multiverse only Multiverse
+        scraped_pool = scraped_page_punchers if figure.get('series') == 'dc-page-punchers' else scraped_multiverse
+        match = find_best_match(name, scraped_pool)
         
         if match:
             image_url = match['image_url']
