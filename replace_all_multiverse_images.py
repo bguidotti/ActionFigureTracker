@@ -436,6 +436,9 @@ def main():
         # Page Punchers figures must use Page Punchers images; Multiverse image on a Page Punchers figure is wrong
         if figure.get('series') == 'dc-page-punchers' and current_image and 'actionfigure411.com' in current_image and current_image not in page_punchers_image_urls:
             current_is_wrong = True
+        # Multiverse figures must NOT use Page Punchers images (e.g. 3.75" tiny Flash); treat as wrong so we replace
+        if figure.get('series') == 'dc-multiverse' and current_image and current_image in page_punchers_image_urls:
+            current_is_wrong = True
         
         # Skip only if already using actionfigure411 and current image is correct (right character and right line)
         if 'actionfigure411.com' in current_image and not current_is_wrong:

@@ -238,13 +238,13 @@ def search_actionfigure411(query: str, line: str = None) -> list:
                 fig['_full_match'] = False
                 results.append(fig)
     
-    # Sort by: line priority, then most matching terms first, then full substring on top
+    # Sort by match quality first (so "Jay Garrick" shows best matches from any line), then line priority
     def relevance_score(fig):
         priority = fig.get('_priority', 1)
         match_count = fig.get('_match_count', 0)
         full_match = fig.get('_full_match', False)
-        # Higher match_count first, full substring beats same count
-        return (priority, -match_count, 0 if full_match else 1)
+        # Best matches first: most query terms, then full phrase, then prefer figure's line
+        return (-match_count, 0 if full_match else 1, priority)
     
     results.sort(key=relevance_score)
     
@@ -254,7 +254,7 @@ def search_actionfigure411(query: str, line: str = None) -> list:
         fig.pop('_match_count', None)
         fig.pop('_full_match', None)
     
-    return results[:30]  # Limit to 30 results
+    return results[:40]  # Return more so user sees Multiverse and Page Punchers options
 
 
 def search_legendsverse(query: str) -> list:
