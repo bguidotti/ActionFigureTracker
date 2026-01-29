@@ -97,6 +97,16 @@ def is_release_date(text: str) -> bool:
     return bool(re.match(r'^(Q\d|Fall|Spring|Summer|Winter|\d{4})', text, re.IGNORECASE))
 
 
+def name_is_release_or_category(name: str) -> bool:
+    """True if the name (or its base before parenthesis/dash) is a release date or category - not a real figure name."""
+    if not name or not name.strip():
+        return True
+    base = name.strip().split(' (')[0].split(' - ')[0].strip()
+    if not base:
+        return True
+    return is_release_date(base) or is_category_header(base)
+
+
 def strip_external_link_markup(text: str) -> str:
     """Remove Wikipedia external link markup: [https://url label] -> label, [https://url] -> ''"""
     if not text:
@@ -312,6 +322,8 @@ def main():
                             continue
                         if figures and figures[-1]['series'] == 'dc-page-punchers':
                             base_name = figures[-1]['name'].split(' (')[0]
+                            if name_is_release_or_category(base_name):
+                                continue
                             variant_name = f"{base_name} ({pp_description})"
                             acc_list = parse_accessories(pp_accessories)
                             figure = {
@@ -382,6 +394,8 @@ def main():
                     # Still create an entry but mark it as platinum
                     if figures:
                         base_name = figures[-1]['name'].split(' (')[0]
+                        if name_is_release_or_category(base_name):
+                            continue
                         variant_name = f"{base_name} ({col_d})"
                         is_platinum = True
                     else:
@@ -392,6 +406,10 @@ def main():
                         continue
                     variant_name = col_d
                     is_platinum = False
+                
+                # Don't create variant when base name is a release date or category (e.g. "Q3 2022 (The New 52 version)")
+                if figures and name_is_release_or_category(figures[-1]['name'].split(' (')[0]):
+                    continue
                 
                 acc_list = parse_accessories(col_c)
                 # Every figure must have a disambiguating description (no bare character names)
@@ -418,10 +436,15 @@ def main():
                 continue
             
             # Regular figure entry: every row must have a disambiguating description (no bare character names)
+            # Skip when figure name column is actually a release date or category (e.g. "Q3 2022", "Standard figures")
+            if name_is_release_or_category(col_b):
+                continue
             description_for_name = col_d or current_category or current_wave or (
                 "DC Multiverse" if current_series in ("dc-multiverse", "dc-page-punchers") else "Figure"
             )
             full_name = create_figure_name(col_b, description_for_name)
+            if name_is_release_or_category(full_name):
+                continue
             is_platinum = 'platinum' in (col_d or '').lower() if col_d else False
             
             # Skip entries that are clearly not figure names (parsing artifacts)
