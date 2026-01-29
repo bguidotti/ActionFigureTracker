@@ -436,30 +436,96 @@ def fetch_mcfarlane_product_page(product_url: str) -> dict:
         return {'title': '', 'images': [], 'error': str(e)}
 
 
+def _decode_unicode_escapes(s: str) -> str:
+    """Decode \\u002f style escapes so we can find URLs in Google's JSON."""
+    def replace_escape(m):
+        return chr(int(m.group(1), 16))
+    return re.sub(r'\\u([0-9a-fA-F]{4})', replace_escape, s)
+
+
 def search_google_images(query: str) -> list:
-    """Search Google Images (limited, may be blocked)"""
+    """Search Google Images. Parses embedded JSON/JS (ou, ru, etc.) since HTML has few direct URLs."""
     results = []
     try:
         search_url = f"https://www.google.com/search?tbm=isch&q={urllib.parse.quote(query + ' mcfarlane action figure')}"
-        response = requests.get(search_url, headers=HEADERS, timeout=15)
-        
-        # Extract image URLs from the response
-        img_urls = re.findall(r'"(https://[^"]+\.(?:jpg|jpeg|png|webp))"', response.text)
-        
+        headers = {
+            **HEADERS,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+        }
+        response = requests.get(search_url, headers=headers, timeout=15)
+        response.raise_for_status()
+        text = response.text
+
+        # Decode so "https:\u002f\u002fexample.com" becomes "https://example.com"
+        text_decoded = _decode_unicode_escapes(text)
+
         seen = set()
-        for url in img_urls[:15]:
-            if 'google' not in url and 'gstatic' not in url and url not in seen:
+        candidates = []
+
+        # 1. Google often embeds "ou":"https://..." (original image URL) or "ru":"https://..."
+        for pattern in [
+            r'"ou"\s*:\s*"(https?://[^"]+)"',
+            r'"ru"\s*:\s*"(https?://[^"]+)"',
+            r'\["(https?://[^"]+\.(?:jpg|jpeg|png|webp)(?:\?[^"]*)?)"\]',
+            r'"(https?://[^"]+\.(?:jpg|jpeg|png|webp)(?:\?[^"]*)?)"',
+        ]:
+            for m in re.finditer(pattern, text_decoded):
+                url = m.group(1).strip()
+                if not url or url in seen:
+                    continue
+                if 'google.' in url or 'gstatic.' in url or 'googleusercontent' in url:
+                    continue
+                if any(x in url.lower() for x in ('logo', 'favicon', 'pixel', '1x1', 'blank.gif')):
+                    continue
                 seen.add(url)
+                candidates.append(url)
+
+        # 2. From raw (non-decoded) text, try strict extension match
+        for m in re.finditer(r'"(https://[^"]+\.(?:jpg|jpeg|png|webp)(?:\?[^"]*)?)"', text):
+            url = m.group(1).strip()
+            if url in seen:
+                continue
+            if 'google' not in url and 'gstatic' not in url:
+                seen.add(url)
+                candidates.append(url)
+
+        # 3. Broad fallback: any quoted https URL that looks like an image (CDN, /img/, etc.)
+        if len(candidates) < 5:
+            for m in re.finditer(r'"(https://[^"]{10,400})"', text_decoded):
+                url = m.group(1).strip()
+                if url in seen or not url.startswith('http'):
+                    continue
+                if 'google.' in url or 'gstatic.' in url or 'googleusercontent' in url:
+                    continue
+                if any(x in url.lower() for x in ('logo', 'favicon', 'pixel', '1x1', 'blank', 'spacer', 'tracking')):
+                    continue
+                # Prefer URLs that look like images
+                if any(x in url.lower() for x in ('/img', '/image', '.jpg', '.jpeg', '.png', '.webp', 'cdn', 'cloudinary', 'images.')):
+                    seen.add(url)
+                    candidates.append(url)
+
+        for url in candidates[:18]:
+            try:
+                # Skip data URLs and very long junk
+                if url.startswith('data:') or len(url) > 800:
+                    continue
                 results.append({
                     'url': url,
                     'title': f'{query} - Google Image',
                     'source': 'Google',
                     'source_icon': 'magnifyingglass'
                 })
-                
+            except Exception:
+                continue
+
+        if not results:
+            logger.info("Google Images: no URLs extracted (page structure may have changed or request blocked)")
+    except requests.RequestException as e:
+        logger.warning(f"Google Images request failed: {e}")
     except Exception as e:
         logger.error(f"Error searching Google Images: {e}")
-    
+
     return results
 
 

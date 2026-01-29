@@ -943,7 +943,6 @@ struct ManualURLSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
                             .background(CollectorTheme.cardBackground)
-                        }
                         .padding(.top)
                     }
                 }
