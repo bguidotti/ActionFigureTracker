@@ -188,7 +188,10 @@ def strip_wiki_markup(text: str) -> str:
     if not text:
         return ""
     text = text.strip()
-    # Remove [[link|label]] -> label, [[link]] -> link
+    # External links: [https://url label] -> label; [https://url] -> remove
+    text = re.sub(r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", r"\2", text)
+    text = re.sub(r"\[https?://[^\]]+\]", "", text)
+    # Internal links: [[link|label]] -> label, [[link]] -> link
     text = re.sub(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", r"\1", text)
     # Remove ''italic'' and '''bold'''
     text = re.sub(r"'{2,3}([^']*)'{2,3}", r"\1", text)

@@ -97,10 +97,22 @@ def is_release_date(text: str) -> bool:
     return bool(re.match(r'^(Q\d|Fall|Spring|Summer|Winter|\d{4})', text, re.IGNORECASE))
 
 
+def strip_external_link_markup(text: str) -> str:
+    """Remove Wikipedia external link markup: [https://url label] -> label, [https://url] -> ''"""
+    if not text:
+        return ''
+    # [https://... label] -> label
+    text = re.sub(r'\[https?://[^\s\]]+\s+([^\]]+)\]', r'\1', text)
+    # [https://...] -> remove
+    text = re.sub(r'\[https?://[^\]]+\]', '', text)
+    return text
+
+
 def clean_text(text: str) -> str:
     """Clean up text by removing extra whitespace and quotes"""
     if not text:
         return ''
+    text = strip_external_link_markup(text)
     text = text.strip()
     text = re.sub(r'\s+', ' ', text)  # Collapse whitespace
     text = re.sub(r'^["\']|["\']$', '', text)  # Remove surrounding quotes
@@ -449,10 +461,12 @@ def main():
         with open(JSON_FILE, 'r', encoding='utf-8') as f:
             existing = json.load(f)
         existing_dc = [f for f in existing if f.get('series') in ['dc-multiverse', 'dc-page-punchers']]
-        # Lookup by (name, series) to preserve imageString and isCollected
+        # Lookup by (normalized name, series) so we match even if existing had URL markup in name
         existing_dc_lookup = {}
         for f in existing_dc:
-            key = (f.get('name', '').strip(), f.get('series', ''))
+            raw_name = f.get('name', '') or ''
+            norm_name = clean_text(strip_external_link_markup(raw_name)).strip() or raw_name.strip()
+            key = (norm_name, f.get('series', ''))
             if key not in existing_dc_lookup:
                 existing_dc_lookup[key] = {
                     'imageString': f.get('imageString') or '',

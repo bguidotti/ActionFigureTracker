@@ -1,4 +1,46 @@
 {
+  "batman injustice 2 platinum": {
+    "name": "Batman Injustice 2 Platinum",
+    "slug": "batman-injustice-2-platinum",
+    "id": "3174",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-injustice-2-platinum-3174.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mattel/batman-injustice-2-platinum-3174.php"
+  },
+  "superman injustice 2 platinum": {
+    "name": "Superman Injustice 2 Platinum",
+    "slug": "superman-injustice-2-platinum",
+    "id": "3175",
+    "image_url": "https://www.actionfigure411.com/dc/images/superman-injustice-2-platinum-3175.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mattel/superman-injustice-2-platinum-3175.php"
+  },
+  "vulko aquaman": {
+    "name": "Vulko Aquaman",
+    "slug": "vulko-aquaman",
+    "id": "3057",
+    "image_url": "https://www.actionfigure411.com/dc/images/vulko-aquaman-3057.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mattel/vulko-aquaman-3057.php"
+  },
+  "bizarro": {
+    "name": "Bizarro",
+    "slug": "bizarro",
+    "id": "3054",
+    "image_url": "https://www.actionfigure411.com/dc/images/bizarro-3054.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mattel/bizarro-3054.php"
+  },
+  "shazam": {
+    "name": "Shazam",
+    "slug": "shazam",
+    "id": "3055",
+    "image_url": "https://www.actionfigure411.com/dc/images/shazam-3055.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mattel/shazam-3055.php"
+  },
+  "doctor sivana shazam": {
+    "name": "Doctor Sivana Shazam",
+    "slug": "doctor-sivana-shazam",
+    "id": "3056",
+    "image_url": "https://www.actionfigure411.com/dc/images/doctor-sivana-shazam-3056.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mattel/doctor-sivana-shazam-3056.php"
+  },
   "batman flashpoint": {
     "name": "Batman Flashpoint",
     "slug": "batman-flashpoint",
@@ -12,6 +54,13 @@
     "id": "2926",
     "image_url": "https://www.actionfigure411.com/dc/images/batgirl-art-of-the-crime-2926.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batgirl-art-of-the-crime-2926.php"
+  },
+  "batman detective comics 1000": {
+    "name": "Batman Detective Comics 1000",
+    "slug": "batman-detective-comics-1000",
+    "id": "2935",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-detective-comics-1000-2935.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-detective-comics-1000-2935.php"
   },
   "batman who laughs": {
     "name": "Batman Who Laughs",
@@ -34,12 +83,12 @@
     "image_url": "https://www.actionfigure411.com/dc/images/batman-detective-comics-1000-blue-costume-2936.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-detective-comics-1000-blue-costume-2936.php"
   },
-  "batman detective comics 1000": {
-    "name": "Batman Detective Comics 1000",
-    "slug": "batman-detective-comics-1000",
-    "id": "2935",
-    "image_url": "https://www.actionfigure411.com/dc/images/batman-detective-comics-1000-2935.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-detective-comics-1000-2935.php"
+  "batman animated series": {
+    "name": "Batman Animated Series",
+    "slug": "batman-animated-series",
+    "id": "2923",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-animated-series-2923.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-animated-series-2923.php"
   },
   "batman animated series blue costume": {
     "name": "Batman Animated Series Blue Costume",
@@ -47,13 +96,6 @@
     "id": "2924",
     "image_url": "https://www.actionfigure411.com/dc/images/batman-animated-series-blue-costume-2924.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-animated-series-blue-costume-2924.php"
-  },
-  "batman animated series": {
-    "name": "Batman Animated Series",
-    "slug": "batman-animated-series",
-    "id": "2923",
-    "image_url": "https://www.actionfigure411.com/dc/images/batman-animated-series-2923.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-animated-series-2923.php"
   },
   "green arrow arrow tv series": {
     "name": "Green Arrow Arrow Tv Series",
@@ -83,13 +125,6 @@
     "image_url": "https://www.actionfigure411.com/dc/images/nightwing-better-than-batman-2927.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/nightwing-better-than-batman-2927.php"
   },
-  "superman animated series": {
-    "name": "Superman Animated Series",
-    "slug": "superman-animated-series",
-    "id": "2934",
-    "image_url": "https://www.actionfigure411.com/dc/images/superman-animated-series-2934.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/superman-animated-series-2934.php"
-  },
   "superman action comics 1000": {
     "name": "Superman Action Comics 1000",
     "slug": "superman-action-comics-1000",
@@ -104,19 +139,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/superman-unchained-armor-2933.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/superman-unchained-armor-2933.php"
   },
+  "superman animated series": {
+    "name": "Superman Animated Series",
+    "slug": "superman-animated-series",
+    "id": "2934",
+    "image_url": "https://www.actionfigure411.com/dc/images/superman-animated-series-2934.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/superman-animated-series-2934.php"
+  },
   "azrael curse of the white knight 1": {
     "name": "Azrael Curse Of The White Knight 1",
     "slug": "azrael-curse-of-the-white-knight-1",
     "id": "2942",
     "image_url": "https://www.actionfigure411.com/dc/images/azrael-curse-of-the-white-knight-1-2942.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/azrael-curse-of-the-white-knight-1-2942.php"
-  },
-  "batman arkham asylum": {
-    "name": "Batman Arkham Asylum",
-    "slug": "batman-arkham-asylum",
-    "id": "2944",
-    "image_url": "https://www.actionfigure411.com/dc/images/batman-arkham-asylum-2944.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-arkham-asylum-2944.php"
   },
   "batman white knight 1": {
     "name": "Batman White Knight 1",
@@ -132,6 +167,20 @@
     "image_url": "https://www.actionfigure411.com/dc/images/batman-arkham-asylum-bronze-2945.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-arkham-asylum-bronze-2945.php"
   },
+  "batman arkham asylum": {
+    "name": "Batman Arkham Asylum",
+    "slug": "batman-arkham-asylum",
+    "id": "2944",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-arkham-asylum-2944.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-arkham-asylum-2944.php"
+  },
+  "joker arkham asylum": {
+    "name": "Joker Arkham Asylum",
+    "slug": "joker-arkham-asylum",
+    "id": "2941",
+    "image_url": "https://www.actionfigure411.com/dc/images/joker-arkham-asylum-2941.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/joker-arkham-asylum-2941.php"
+  },
   "joker white knight 8": {
     "name": "Joker White Knight 8",
     "slug": "joker-white-knight-8",
@@ -146,12 +195,12 @@
     "image_url": "https://www.actionfigure411.com/dc/images/joker-arkham-asylum-bronze-2946.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/joker-arkham-asylum-bronze-2946.php"
   },
-  "joker arkham asylum": {
-    "name": "Joker Arkham Asylum",
-    "slug": "joker-arkham-asylum",
-    "id": "2941",
-    "image_url": "https://www.actionfigure411.com/dc/images/joker-arkham-asylum-2941.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/joker-arkham-asylum-2941.php"
+  "wonder woman 1984": {
+    "name": "Wonder Woman 1984",
+    "slug": "wonder-woman-1984",
+    "id": "2937",
+    "image_url": "https://www.actionfigure411.com/dc/images/wonder-woman-1984-2937.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/wonder-woman-1984-2937.php"
   },
   "wonder woman 1984 gold armor": {
     "name": "Wonder Woman 1984 Gold Armor",
@@ -160,13 +209,6 @@
     "image_url": "https://www.actionfigure411.com/dc/images/wonder-woman-1984-gold-armor-2938.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/wonder-woman-1984-gold-armor-2938.php"
   },
-  "wonder woman 1984": {
-    "name": "Wonder Woman 1984",
-    "slug": "wonder-woman-1984",
-    "id": "2937",
-    "image_url": "https://www.actionfigure411.com/dc/images/wonder-woman-1984-2937.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/wonder-woman-1984-2937.php"
-  },
   "azrael batman armor": {
     "name": "Azrael Batman Armor",
     "slug": "azrael-batman-armor",
@@ -174,19 +216,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/azrael-batman-armor-2949.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/azrael-batman-armor-2949.php"
   },
-  "batman arkham knight": {
-    "name": "Batman Arkham Knight",
-    "slug": "batman-arkham-knight",
-    "id": "2950",
-    "image_url": "https://www.actionfigure411.com/dc/images/batman-arkham-knight-2950.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-arkham-knight-2950.php"
-  },
   "batman arkham knight bronze": {
     "name": "Batman Arkham Knight Bronze",
     "slug": "batman-arkham-knight-bronze",
     "id": "2951",
     "image_url": "https://www.actionfigure411.com/dc/images/batman-arkham-knight-bronze-2951.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-arkham-knight-bronze-2951.php"
+  },
+  "batman arkham knight": {
+    "name": "Batman Arkham Knight",
+    "slug": "batman-arkham-knight",
+    "id": "2950",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-arkham-knight-2950.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-arkham-knight-2950.php"
   },
   "cyborg teen titans": {
     "name": "Cyborg Teen Titans",
@@ -202,19 +244,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/batman-earth-32-the-dawnbreaker-2954.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-earth-32-the-dawnbreaker-2954.php"
   },
-  "deathstroke arkham origins": {
-    "name": "Deathstroke Arkham Origins",
-    "slug": "deathstroke-arkham-origins",
-    "id": "2952",
-    "image_url": "https://www.actionfigure411.com/dc/images/deathstroke-arkham-origins-2952.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/deathstroke-arkham-origins-2952.php"
-  },
   "deathstroke arkham origins bronze": {
     "name": "Deathstroke Arkham Origins Bronze",
     "slug": "deathstroke-arkham-origins-bronze",
     "id": "2953",
     "image_url": "https://www.actionfigure411.com/dc/images/deathstroke-arkham-origins-bronze-2953.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/deathstroke-arkham-origins-bronze-2953.php"
+  },
+  "deathstroke arkham origins": {
+    "name": "Deathstroke Arkham Origins",
+    "slug": "deathstroke-arkham-origins",
+    "id": "2952",
+    "image_url": "https://www.actionfigure411.com/dc/images/deathstroke-arkham-origins-2952.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/deathstroke-arkham-origins-2952.php"
   },
   "batman earth 1 the devastator": {
     "name": "Batman Earth 1 The Devastator",
@@ -335,19 +377,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/flash-superman-the-animated-series-3113.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/flash-superman-the-animated-series-3113.php"
   },
-  "lex luthor green power suit dc new 52": {
-    "name": "Lex Luthor Green Power Suit Dc New 52",
-    "slug": "lex-luthor-green-power-suit-dc-new-52",
-    "id": "3182",
-    "image_url": "https://www.actionfigure411.com/dc/images/lex-luthor-green-power-suit-dc-new-52-3182.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/lex-luthor-green-power-suit-dc-new-52-3182.php"
-  },
   "lex luthor blue power suit the darkseid war": {
     "name": "Lex Luthor Blue Power Suit The Darkseid War",
     "slug": "lex-luthor-blue-power-suit-the-darkseid-war",
     "id": "3183",
     "image_url": "https://www.actionfigure411.com/dc/images/lex-luthor-blue-power-suit-the-darkseid-war-3183.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/lex-luthor-blue-power-suit-the-darkseid-war-3183.php"
+  },
+  "lex luthor green power suit dc new 52": {
+    "name": "Lex Luthor Green Power Suit Dc New 52",
+    "slug": "lex-luthor-green-power-suit-dc-new-52",
+    "id": "3182",
+    "image_url": "https://www.actionfigure411.com/dc/images/lex-luthor-green-power-suit-dc-new-52-3182.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/lex-luthor-green-power-suit-dc-new-52-3182.php"
   },
   "red hood three jokers": {
     "name": "Red Hood Three Jokers",
@@ -370,6 +412,13 @@
     "image_url": "https://www.actionfigure411.com/dc/images/steppenwolf-justice-league-3004.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/steppenwolf-justice-league-3004.php"
   },
+  "superman justice league bluered suit": {
+    "name": "Superman Justice League Bluered Suit",
+    "slug": "superman-justice-league-bluered-suit",
+    "id": "2981",
+    "image_url": "https://www.actionfigure411.com/dc/images/superman-justice-league-bluered-suit-2981.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/superman-justice-league-bluered-suit-2981.php"
+  },
   "superman black suit variant": {
     "name": "Superman Black Suit Variant",
     "slug": "superman-black-suit-variant",
@@ -384,12 +433,12 @@
     "image_url": "https://www.actionfigure411.com/dc/images/superman-rebirth-3199.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/superman-rebirth-3199.php"
   },
-  "superman justice league bluered suit": {
-    "name": "Superman Justice League Bluered Suit",
-    "slug": "superman-justice-league-bluered-suit",
-    "id": "2981",
-    "image_url": "https://www.actionfigure411.com/dc/images/superman-justice-league-bluered-suit-2981.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/superman-justice-league-bluered-suit-2981.php"
+  "swamp thing rebirth": {
+    "name": "Swamp Thing Rebirth",
+    "slug": "swamp-thing-rebirth",
+    "id": "3472",
+    "image_url": "https://www.actionfigure411.com/dc/images/swamp-thing-rebirth-3472.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/swamp-thing-rebirth-3472.php"
   },
   "swamp thing antlers variant new 52": {
     "name": "Swamp Thing Antlers Variant New 52",
@@ -404,13 +453,6 @@
     "id": "3800",
     "image_url": "https://www.actionfigure411.com/dc/images/swamp-thing-rebirth-platinum-3800.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/swamp-thing-rebirth-platinum-3800.php"
-  },
-  "swamp thing rebirth": {
-    "name": "Swamp Thing Rebirth",
-    "slug": "swamp-thing-rebirth",
-    "id": "3472",
-    "image_url": "https://www.actionfigure411.com/dc/images/swamp-thing-rebirth-3472.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/swamp-thing-rebirth-3472.php"
   },
   "batman todd mcfarlane design": {
     "name": "Batman Todd Mcfarlane Design",
@@ -447,19 +489,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/the-drowned-batman-earth-11-2971.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/the-drowned-batman-earth-11-2971.php"
   },
-  "flash injustice 2": {
-    "name": "Flash Injustice 2",
-    "slug": "flash-injustice-2",
-    "id": "2974",
-    "image_url": "https://www.actionfigure411.com/dc/images/flash-injustice-2-2974.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/flash-injustice-2-2974.php"
-  },
   "flash injustice 2 hot pursuit": {
     "name": "Flash Injustice 2 Hot Pursuit",
     "slug": "flash-injustice-2-hot-pursuit",
     "id": "2987",
     "image_url": "https://www.actionfigure411.com/dc/images/flash-injustice-2-hot-pursuit-2987.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/flash-injustice-2-hot-pursuit-2987.php"
+  },
+  "flash injustice 2": {
+    "name": "Flash Injustice 2",
+    "slug": "flash-injustice-2",
+    "id": "2974",
+    "image_url": "https://www.actionfigure411.com/dc/images/flash-injustice-2-2974.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/flash-injustice-2-2974.php"
   },
   "gorilla grodd injustice 2": {
     "name": "Gorilla Grodd Injustice 2",
@@ -517,20 +559,6 @@
     "image_url": "https://www.actionfigure411.com/dc/images/armored-batman-the-dark-knight-returns-2995.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/armored-batman-the-dark-knight-returns-2995.php"
   },
-  "batman justice league platinum": {
-    "name": "Batman Justice League Platinum",
-    "slug": "batman-justice-league-platinum",
-    "id": "2984",
-    "image_url": "https://www.actionfigure411.com/dc/images/batman-justice-league-platinum-2984.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-justice-league-platinum-2984.php"
-  },
-  "batman batman beyond": {
-    "name": "Batman Batman Beyond",
-    "slug": "batman-batman-beyond",
-    "id": "2990",
-    "image_url": "https://www.actionfigure411.com/dc/images/batman-batman-beyond-2990.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-batman-beyond-2990.php"
-  },
   "batman justice league": {
     "name": "Batman Justice League",
     "slug": "batman-justice-league",
@@ -544,6 +572,20 @@
     "id": "2991",
     "image_url": "https://www.actionfigure411.com/dc/images/batman-batman-beyond-digitized-2991.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-batman-beyond-digitized-2991.php"
+  },
+  "batman justice league platinum": {
+    "name": "Batman Justice League Platinum",
+    "slug": "batman-justice-league-platinum",
+    "id": "2984",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-justice-league-platinum-2984.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-justice-league-platinum-2984.php"
+  },
+  "batman batman beyond": {
+    "name": "Batman Batman Beyond",
+    "slug": "batman-batman-beyond",
+    "id": "2990",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-batman-beyond-2990.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-batman-beyond-2990.php"
   },
   "cyborg justice league": {
     "name": "Cyborg Justice League",
@@ -559,19 +601,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/the-demon-demon-knights-2994.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/the-demon-demon-knights-2994.php"
   },
-  "dr fate injustice 2": {
-    "name": "Dr Fate Injustice 2",
-    "slug": "dr-fate-injustice-2",
-    "id": "2996",
-    "image_url": "https://www.actionfigure411.com/dc/images/dr-fate-injustice-2-2996.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/dr-fate-injustice-2-2996.php"
-  },
   "dr fate injustice 2 platinum": {
     "name": "Dr Fate Injustice 2 Platinum",
     "slug": "dr-fate-injustice-2-platinum",
     "id": "2997",
     "image_url": "https://www.actionfigure411.com/dc/images/dr-fate-injustice-2-platinum-2997.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/dr-fate-injustice-2-platinum-2997.php"
+  },
+  "dr fate injustice 2": {
+    "name": "Dr Fate Injustice 2",
+    "slug": "dr-fate-injustice-2",
+    "id": "2996",
+    "image_url": "https://www.actionfigure411.com/dc/images/dr-fate-injustice-2-2996.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/dr-fate-injustice-2-2996.php"
   },
   "flash justice league": {
     "name": "Flash Justice League",
@@ -615,19 +657,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/harley-quinn-birds-of-prey-3001.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/harley-quinn-birds-of-prey-3001.php"
   },
-  "lobo rebirth platinum": {
-    "name": "Lobo Rebirth Platinum",
-    "slug": "lobo-rebirth-platinum",
-    "id": "3801",
-    "image_url": "https://www.actionfigure411.com/dc/images/lobo-rebirth-platinum-3801.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/lobo-rebirth-platinum-3801.php"
-  },
   "lobo rebirth": {
     "name": "Lobo Rebirth",
     "slug": "lobo-rebirth",
     "id": "3038",
     "image_url": "https://www.actionfigure411.com/dc/images/lobo-rebirth-3038.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/lobo-rebirth-3038.php"
+  },
+  "lobo rebirth platinum": {
+    "name": "Lobo Rebirth Platinum",
+    "slug": "lobo-rebirth-platinum",
+    "id": "3801",
+    "image_url": "https://www.actionfigure411.com/dc/images/lobo-rebirth-platinum-3801.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/lobo-rebirth-platinum-3801.php"
   },
   "red hood dc new 52": {
     "name": "Red Hood Dc New 52",
@@ -783,19 +825,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/blight-batman-beyond-meltdown-variant-3805.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/blight-batman-beyond-meltdown-variant-3805.php"
   },
-  "bruce wayne drifter unmasked the batman": {
-    "name": "Bruce Wayne Drifter Unmasked The Batman",
-    "slug": "bruce-wayne-drifter-unmasked-the-batman",
-    "id": "3811",
-    "image_url": "https://www.actionfigure411.com/dc/images/bruce-wayne-drifter-unmasked-the-batman-3811.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/bruce-wayne-drifter-unmasked-the-batman-3811.php"
-  },
   "bruce wayne drifter the batman": {
     "name": "Bruce Wayne Drifter The Batman",
     "slug": "bruce-wayne-drifter-the-batman",
     "id": "3810",
     "image_url": "https://www.actionfigure411.com/dc/images/bruce-wayne-drifter-the-batman-3810.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/bruce-wayne-drifter-the-batman-3810.php"
+  },
+  "bruce wayne drifter unmasked the batman": {
+    "name": "Bruce Wayne Drifter Unmasked The Batman",
+    "slug": "bruce-wayne-drifter-unmasked-the-batman",
+    "id": "3811",
+    "image_url": "https://www.actionfigure411.com/dc/images/bruce-wayne-drifter-unmasked-the-batman-3811.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/bruce-wayne-drifter-unmasked-the-batman-3811.php"
   },
   "catwoman the batman": {
     "name": "Catwoman The Batman",
@@ -951,19 +993,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/penguin-the-batman-3862.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/penguin-the-batman-3862.php"
   },
-  "red hood gotham knights": {
-    "name": "Red Hood Gotham Knights",
-    "slug": "red-hood-gotham-knights",
-    "id": "3707",
-    "image_url": "https://www.actionfigure411.com/dc/images/red-hood-gotham-knights-3707.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/red-hood-gotham-knights-3707.php"
-  },
   "red hood gotham knights platinum": {
     "name": "Red Hood Gotham Knights Platinum",
     "slug": "red-hood-gotham-knights-platinum",
     "id": "3812",
     "image_url": "https://www.actionfigure411.com/dc/images/red-hood-gotham-knights-platinum-3812.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/red-hood-gotham-knights-platinum-3812.php"
+  },
+  "red hood gotham knights": {
+    "name": "Red Hood Gotham Knights",
+    "slug": "red-hood-gotham-knights",
+    "id": "3707",
+    "image_url": "https://www.actionfigure411.com/dc/images/red-hood-gotham-knights-3707.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/red-hood-gotham-knights-3707.php"
   },
   "red robin dc new 52": {
     "name": "Red Robin Dc New 52",
@@ -1203,19 +1245,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/carapax-blue-beetle-movie-6850.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/carapax-blue-beetle-movie-6850.php"
   },
-  "catwoman batman knightfall": {
-    "name": "Catwoman Batman Knightfall",
-    "slug": "catwoman-batman-knightfall",
-    "id": "5580",
-    "image_url": "https://www.actionfigure411.com/dc/images/catwoman-batman-knightfall-5580.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/catwoman-batman-knightfall-5580.php"
-  },
   "catwoman batman knightfall platinum": {
     "name": "Catwoman Batman Knightfall Platinum",
     "slug": "catwoman-batman-knightfall-platinum",
     "id": "6267",
     "image_url": "https://www.actionfigure411.com/dc/images/catwoman-batman-knightfall-platinum-6267.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/catwoman-batman-knightfall-platinum-6267.php"
+  },
+  "catwoman batman knightfall": {
+    "name": "Catwoman Batman Knightfall",
+    "slug": "catwoman-batman-knightfall",
+    "id": "5580",
+    "image_url": "https://www.actionfigure411.com/dc/images/catwoman-batman-knightfall-5580.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/catwoman-batman-knightfall-5580.php"
   },
   "dark flash the flash movie": {
     "name": "Dark Flash The Flash Movie",
@@ -1714,13 +1756,6 @@
     "image_url": "https://www.actionfigure411.com/dc/images/batgirl-dc-classic-12099.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batgirl-dc-classic-12099.php"
   },
-  "batman 1000000 dc one million": {
-    "name": "Batman 1000000 Dc One Million",
-    "slug": "batman-1000000-dc-one-million",
-    "id": "10452",
-    "image_url": "https://www.actionfigure411.com/dc/images/batman-1000000-dc-one-million-10452.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-1000000-dc-one-million-10452.php"
-  },
   "batman batman incorporated": {
     "name": "Batman Batman Incorporated",
     "slug": "batman-batman-incorporated",
@@ -1734,6 +1769,13 @@
     "id": "12097",
     "image_url": "https://www.actionfigure411.com/dc/images/batman-earth-2-earth-2-society-12097.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-earth-2-earth-2-society-12097.php"
+  },
+  "batman 1000000 dc one million": {
+    "name": "Batman 1000000 Dc One Million",
+    "slug": "batman-1000000-dc-one-million",
+    "id": "10452",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-1000000-dc-one-million-10452.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/mcfarlane/batman-1000000-dc-one-million-10452.php"
   },
   "batman 1989": {
     "name": "Batman 1989",
@@ -2666,13 +2708,6 @@
     "image_url": "https://www.actionfigure411.com/dc/images/diablo-suicide-squad-3181.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/killer-croc-cnc/diablo-suicide-squad-3181.php"
   },
-  "harley quinn mallet suicide squad": {
-    "name": "Harley Quinn Mallet Suicide Squad",
-    "slug": "harley-quinn-mallet-suicide-squad",
-    "id": "3178",
-    "image_url": "https://www.actionfigure411.com/dc/images/harley-quinn-mallet-suicide-squad-3178.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/killer-croc-cnc/harley-quinn-mallet-suicide-squad-3178.php"
-  },
   "harley quinn baseball bat suicide squad": {
     "name": "Harley Quinn Baseball Bat Suicide Squad",
     "slug": "harley-quinn-baseball-bat-suicide-squad",
@@ -2687,12 +2722,12 @@
     "image_url": "https://www.actionfigure411.com/dc/images/harley-quinn-gold-black-dress-suicide-squad-3179.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/killer-croc-cnc/harley-quinn-gold-black-dress-suicide-squad-3179.php"
   },
-  "joker silver suit suicide squad": {
-    "name": "Joker Silver Suit Suicide Squad",
-    "slug": "joker-silver-suit-suicide-squad",
-    "id": "3180",
-    "image_url": "https://www.actionfigure411.com/dc/images/joker-silver-suit-suicide-squad-3180.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/killer-croc-cnc/joker-silver-suit-suicide-squad-3180.php"
+  "harley quinn mallet suicide squad": {
+    "name": "Harley Quinn Mallet Suicide Squad",
+    "slug": "harley-quinn-mallet-suicide-squad",
+    "id": "3178",
+    "image_url": "https://www.actionfigure411.com/dc/images/harley-quinn-mallet-suicide-squad-3178.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/killer-croc-cnc/harley-quinn-mallet-suicide-squad-3178.php"
   },
   "joker suicide squad": {
     "name": "Joker Suicide Squad",
@@ -2700,6 +2735,13 @@
     "id": "3087",
     "image_url": "https://www.actionfigure411.com/dc/images/joker-suicide-squad-3087.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/killer-croc-cnc/joker-suicide-squad-3087.php"
+  },
+  "joker silver suit suicide squad": {
+    "name": "Joker Silver Suit Suicide Squad",
+    "slug": "joker-silver-suit-suicide-squad",
+    "id": "3180",
+    "image_url": "https://www.actionfigure411.com/dc/images/joker-silver-suit-suicide-squad-3180.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/killer-croc-cnc/joker-silver-suit-suicide-squad-3180.php"
   },
   "katana suicide squad": {
     "name": "Katana Suicide Squad",
@@ -4031,19 +4073,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/batman-gold-label-hazmat-suit-3370.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/gold-label/batman-gold-label-hazmat-suit-3370.php"
   },
-  "batman year two gold label signed": {
-    "name": "Batman Year Two Gold Label Signed",
-    "slug": "batman-year-two-gold-label-signed",
-    "id": "3195",
-    "image_url": "https://www.actionfigure411.com/dc/images/batman-year-two-gold-label-signed-3195.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/gold-label/batman-year-two-gold-label-signed-3195.php"
-  },
   "batman year two gold label": {
     "name": "Batman Year Two Gold Label",
     "slug": "batman-year-two-gold-label",
     "id": "3194",
     "image_url": "https://www.actionfigure411.com/dc/images/batman-year-two-gold-label-3194.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/gold-label/batman-year-two-gold-label-3194.php"
+  },
+  "batman year two gold label signed": {
+    "name": "Batman Year Two Gold Label Signed",
+    "slug": "batman-year-two-gold-label-signed",
+    "id": "3195",
+    "image_url": "https://www.actionfigure411.com/dc/images/batman-year-two-gold-label-signed-3195.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/gold-label/batman-year-two-gold-label-signed-3195.php"
   },
   "darkseid armored gold label": {
     "name": "Darkseid Armored Gold Label",
@@ -5522,19 +5564,19 @@
     "image_url": "https://www.actionfigure411.com/dc/images/batcycle-the-batman-3473.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/vehicles-and-playsets/batcycle-the-batman-3473.php"
   },
-  "batmobeast gold label": {
-    "name": "Batmobeast Gold Label",
-    "slug": "batmobeast-gold-label",
-    "id": "5245",
-    "image_url": "https://www.actionfigure411.com/dc/images/batmobeast-gold-label-5245.jpg",
-    "page_url": "https://www.actionfigure411.com/dc/multiverse/vehicles-and-playsets/batmobeast-gold-label-5245.php"
-  },
   "batmobeast dark nights death metal": {
     "name": "Batmobeast Dark Nights Death Metal",
     "slug": "batmobeast-dark-nights-death-metal",
     "id": "3732",
     "image_url": "https://www.actionfigure411.com/dc/images/batmobeast-dark-nights-death-metal-3732.jpg",
     "page_url": "https://www.actionfigure411.com/dc/multiverse/vehicles-and-playsets/batmobeast-dark-nights-death-metal-3732.php"
+  },
+  "batmobeast gold label": {
+    "name": "Batmobeast Gold Label",
+    "slug": "batmobeast-gold-label",
+    "id": "5245",
+    "image_url": "https://www.actionfigure411.com/dc/images/batmobeast-gold-label-5245.jpg",
+    "page_url": "https://www.actionfigure411.com/dc/multiverse/vehicles-and-playsets/batmobeast-gold-label-5245.php"
   },
   "drifter motorcycle the batman": {
     "name": "Drifter Motorcycle The Batman",
