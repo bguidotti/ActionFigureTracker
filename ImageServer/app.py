@@ -13,6 +13,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from difflib import SequenceMatcher
 import time
+import json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -214,11 +215,37 @@ def search_actionfigure411(query: str, line: str = None) -> list:
     # Exclude common filler so we count meaningful terms
     query_words -= {'dc', 'multiverse', 'the', 'of', 'and', 'a', 'an', 'mcfarlane', 'page', 'punchers'}
     
+    # Distinct character names that must not be mixed (e.g. Jay Garrick vs Barry Allen)
+    # If query has one name and result title has another from same group, exclude the result
+    FLASH_NAMES = {'jay', 'garrick', 'barry', 'allen', 'wally', 'west'}
+    
+    def is_wrong_character(query_words_set, title_lower):
+        """Exclude result if user searched for one character but result is a different one (e.g. Jay vs Barry)."""
+        title_words_set = set(re.findall(r'\w+', title_lower))
+        query_has_jay = 'jay' in query_words_set or 'garrick' in query_words_set
+        query_has_barry = 'barry' in query_words_set or 'allen' in query_words_set
+        query_has_wally = 'wally' in query_words_set or 'west' in query_words_set
+        title_has_jay = 'jay' in title_words_set or 'garrick' in title_words_set
+        title_has_barry = 'barry' in title_words_set or 'allen' in title_words_set
+        title_has_wally = 'wally' in title_words_set or 'west' in title_words_set
+        # If query is clearly one Flash and title is a different Flash, reject
+        if query_has_jay and (title_has_barry or title_has_wally) and not title_has_jay:
+            return True
+        if query_has_barry and (title_has_jay or title_has_wally) and not title_has_barry:
+            return True
+        if query_has_wally and (title_has_jay or title_has_barry) and not title_has_wally:
+            return True
+        return False
+    
     for fig in all_figures:
         title = fig.get('title', '').lower()
         title_words = set(re.findall(r'\w+', title))
         common = query_words & title_words
         match_count = len(common)
+        
+        # Exclude wrong character (e.g. search "Jay Garrick" must not return "Barry Allen")
+        if is_wrong_character(query_words, title):
+            continue
         
         # Include if full query is substring, or any of the user's terms match
         full_substring = query_lower in title
@@ -301,6 +328,112 @@ def search_legendsverse(query: str) -> list:
         logger.error(f"Error searching LegendsVerse: {e}")
     
     return results
+
+
+def fetch_mcfarlane_product_page(product_url: str) -> dict:
+    """Fetch a McFarlane product page and extract title + all product images (carousel, etc.).
+    
+    McFarlane product pages use JS carousels; images may be in img src, data-src,
+    og:image, or embedded in script/JSON. Returns { 'title': str, 'images': [url, ...] }.
+    """
+    if not product_url.strip().startswith('https://mcfarlane.com/'):
+        return {'title': '', 'images': [], 'error': 'URL must be https://mcfarlane.com/...'}
+    
+    try:
+        response = requests.get(product_url.strip(), headers=HEADERS, timeout=20)
+        response.raise_for_status()
+        html = response.text
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # Title from h1 or og:title
+        title = ''
+        og_title = soup.find('meta', property='og:title')
+        if og_title and og_title.get('content'):
+            title = og_title['content'].strip()
+        if not title:
+            h1 = soup.find('h1')
+            if h1:
+                title = h1.get_text(strip=True)
+        
+        seen = set()
+        images = []
+        
+        # 1. og:image
+        og_img = soup.find('meta', property='og:image')
+        if og_img and og_img.get('content'):
+            u = og_img['content'].strip()
+            if u.startswith('//'):
+                u = 'https:' + u
+            if u not in seen and ('mcfarlane' in u or 'cdn' in u or 'cloudinary' in u or u.endswith(('.jpg', '.jpeg', '.png', '.webp'))):
+                seen.add(u)
+                images.append(u)
+        
+        # 2. All img with src or data-src (product gallery / carousel)
+        for img in soup.find_all('img'):
+            for attr in ('data-src', 'src'):
+                u = img.get(attr)
+                if not u or u in seen:
+                    continue
+                u = u.strip()
+                if u.startswith('//'):
+                    u = 'https:' + u
+                elif u.startswith('/'):
+                    u = 'https://mcfarlane.com' + u
+                if not u.startswith('http'):
+                    continue
+                # Prefer product images (skip tiny icons / logos)
+                if any(skip in u.lower() for skip in ('logo', 'icon', 'avatar', 'favicon', 'pixel', '1x1')):
+                    continue
+                if u.endswith(('.jpg', '.jpeg', '.png', '.webp')) or 'mcfarlane' in u or 'cloudinary' in u or 'cdn' in u:
+                    seen.add(u)
+                    images.append(u)
+        
+        # 3. Script tags: look for JSON with image URLs (common in WooCommerce / React)
+        for script in soup.find_all('script', type=re.compile(r'application/(ld\+)?json')):
+            try:
+                data = json.loads(script.string or '{}')
+                if isinstance(data, dict):
+                    for key in ('image', 'images', 'photo', 'gallery', 'src'):
+                        val = data.get(key)
+                        if isinstance(val, str) and val.startswith('http'):
+                            if val not in seen:
+                                seen.add(val)
+                                images.append(val)
+                        elif isinstance(val, list):
+                            for item in val:
+                                url = item if isinstance(item, str) else (item.get('url') or item.get('src') or item.get('image'))
+                                if url and isinstance(url, str) and url.startswith('http') and url not in seen:
+                                    seen.add(url)
+                                    images.append(url)
+                elif isinstance(data, list):
+                    for item in data:
+                        if isinstance(item, dict):
+                            url = item.get('url') or item.get('src') or item.get('image')
+                            if url and isinstance(url, str) and url.startswith('http') and url not in seen:
+                                seen.add(url)
+                                images.append(url)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        
+        # 4. Inline script: look for URLs matching common CDN patterns
+        for script in soup.find_all('script'):
+            if not script.string:
+                continue
+            # Match "https://...mcfarlane.../...jpg" or cloudinary/cdn URLs
+            for m in re.findall(r'https?://[^\s"\'<>]+\.(?:jpg|jpeg|png|webp)', script.string, re.I):
+                m = m.rstrip('.,;:)')
+                if m not in seen and 'logo' not in m.lower() and 'icon' not in m.lower():
+                    seen.add(m)
+                    images.append(m)
+        
+        return {'title': title, 'images': images}
+        
+    except requests.RequestException as e:
+        logger.error(f"Error fetching McFarlane product page: {e}")
+        return {'title': '', 'images': [], 'error': str(e)}
+    except Exception as e:
+        logger.error(f"Error parsing McFarlane product page: {e}")
+        return {'title': '', 'images': [], 'error': str(e)}
 
 
 def search_google_images(query: str) -> list:
@@ -390,6 +523,26 @@ def search_images():
     })
 
 
+@app.route('/api/mcfarlane-product', methods=['GET'])
+def mcfarlane_product():
+    """
+    Fetch images from a McFarlane product page URL (e.g. new figures not yet on ActionFigure411).
+    
+    Query params:
+    - url: Full McFarlane product URL (required), e.g. https://mcfarlane.com/toys/flash-jay-garrick-flash-123-comic-red-platinum-edition/
+    
+    Returns: { title, images: [url, ...], error? }
+    """
+    product_url = request.args.get('url', '').strip()
+    if not product_url:
+        return jsonify({'error': 'Query parameter "url" is required', 'title': '', 'images': []}), 400
+    
+    result = fetch_mcfarlane_product_page(product_url)
+    if result.get('error') and not result.get('images'):
+        return jsonify(result), 422
+    return jsonify({k: v for k, v in result.items() if k != 'error'})
+
+
 @app.route('/api/refresh-cache', methods=['POST'])
 def refresh_cache():
     """Force refresh of the visual guide cache"""
@@ -428,6 +581,7 @@ if __name__ == '__main__':
     print("Starting server on http://localhost:5050")
     print("API Endpoints:")
     print("  GET  /api/search?q=<query>  - Search for images")
+    print("  GET  /api/mcfarlane-product?url=<mcfarlane product URL>  - Get images from McFarlane product page")
     print("  POST /api/refresh-cache     - Refresh visual guide cache")
     print("  GET  /api/health            - Health check")
     print("=" * 50)

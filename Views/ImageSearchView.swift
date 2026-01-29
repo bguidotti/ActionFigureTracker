@@ -117,6 +117,7 @@ struct ImageSearchView: View {
             .sheet(isPresented: $showManualEntry) {
                 ManualURLSheet(
                     figure: figure,
+                    apiBaseURL: apiBaseURL,
                     onSave: { url in
                         saveImage(url: url)
                     }
@@ -710,60 +711,148 @@ struct ImagePreviewSheet: View {
 
 // MARK: - Manual URL Sheet
 
+struct McFarlaneProductResponse: Codable {
+    let title: String
+    let images: [String]
+}
+
 struct ManualURLSheet: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var dataStore: FigureDataStore
     
     let figure: ActionFigure
+    let apiBaseURL: String
     let onSave: (String) -> Void
     
     @State private var urlText: String = ""
     @State private var showPreview: Bool = false
+    
+    @State private var mcfarlaneImages: [String] = []
+    @State private var mcfarlaneLoading: Bool = false
+    @State private var mcfarlaneError: String?
+    @State private var mcfarlaneTitle: String = ""
+    
+    private var isMcFarlaneProductURL: Bool {
+        urlText.contains("mcfarlane.com/toys/")
+    }
     
     var body: some View {
         NavigationStack {
             ZStack {
                 CollectorTheme.background.ignoresSafeArea()
                 
-                VStack(spacing: 20) {
-                    // Instructions
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("PASTE IMAGE URL")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(CollectorTheme.textSecondary)
-                        
-                        Text("Copy an image URL from Safari and paste it here")
-                            .font(.caption)
-                            .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                    
-                    // URL Input
-                    HStack {
-                        TextField("https://...", text: $urlText)
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundStyle(CollectorTheme.textPrimary)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                        
-                        Button {
-                            if let clipboard = UIPasteboard.general.string {
-                                urlText = clipboard
-                            }
-                        } label: {
-                            Image(systemName: "doc.on.clipboard")
-                                .foregroundStyle(CollectorTheme.accentGold)
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Instructions
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("PASTE IMAGE OR PRODUCT URL")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(CollectorTheme.textSecondary)
+                            
+                            Text("Paste a direct image URL, or a McFarlane product page (e.g. mcfarlane.com/toys/...) to pull images from the page")
+                                .font(.caption)
+                                .foregroundStyle(CollectorTheme.textSecondary.opacity(0.7))
                         }
-                    }
-                    .padding()
-                    .background(CollectorTheme.surfaceBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal)
-                    
-                    // Preview
-                    if showPreview && !urlText.isEmpty {
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        
+                        // URL Input
+                        HStack {
+                            TextField("https://...", text: $urlText)
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundStyle(CollectorTheme.textPrimary)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                            
+                            Button {
+                                if let clipboard = UIPasteboard.general.string {
+                                    urlText = clipboard
+                                }
+                            } label: {
+                                Image(systemName: "doc.on.clipboard")
+                                    .foregroundStyle(CollectorTheme.accentGold)
+                            }
+                        }
+                        .padding()
+                        .background(CollectorTheme.surfaceBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal)
+                        
+                        // McFarlane product: "Get images from this page"
+                        if isMcFarlaneProductURL && mcfarlaneImages.isEmpty && !mcfarlaneLoading {
+                            Button {
+                                fetchMcFarlaneProductImages()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "photo.stack")
+                                    Text("Get images from this McFarlane page")
+                                }
+                                .font(.subheadline.weight(.medium))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .foregroundStyle(.green)
+                                .background(Color.green.opacity(0.15))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .padding(.horizontal)
+                        }
+                        
+                        if mcfarlaneLoading {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .scaleEffect(0.9)
+                                Text("Loading images from McFarlane...")
+                                    .font(.caption)
+                                    .foregroundStyle(CollectorTheme.textSecondary)
+                            }
+                            .padding()
+                        }
+                        
+                        if let err = mcfarlaneError {
+                            Text(err)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .padding(.horizontal)
+                        }
+                        
+                        // McFarlane images grid
+                        if !mcfarlaneImages.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                if !mcfarlaneTitle.isEmpty {
+                                    Text(mcfarlaneTitle)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(CollectorTheme.textSecondary)
+                                        .lineLimit(2)
+                                }
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                    ForEach(mcfarlaneImages, id: \.self) { imageURL in
+                                        Button {
+                                            onSave(imageURL)
+                                            dismiss()
+                                        } label: {
+                                            AsyncImage(url: URL(string: imageURL)) { phase in
+                                                if let image = phase.image {
+                                                    image
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fill)
+                                                } else {
+                                                    CollectorTheme.surfaceBackground
+                                                }
+                                            }
+                                            .frame(height: 120)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        
+                        // Preview (direct image URL)
+                        if showPreview && !urlText.isEmpty && mcfarlaneImages.isEmpty {
                         AsyncImage(url: URL(string: urlText)) { phase in
                             if let image = phase.image {
                                 image
@@ -787,69 +876,77 @@ struct ManualURLSheet: View {
                         .padding(.horizontal)
                     }
                     
-                    // Buttons
-                    VStack(spacing: 12) {
-                        if !showPreview {
-                            Button {
-                                showPreview = true
-                            } label: {
-                                HStack {
-                                    Image(systemName: "eye")
-                                    Text("Preview")
+                            // Buttons (direct image URL)
+                            if !mcfarlaneImages.isEmpty {
+                                Text("Tap an image above to use it")
+                                    .font(.caption)
+                                    .foregroundStyle(CollectorTheme.textSecondary)
+                            } else {
+                                VStack(spacing: 12) {
+                                    if !showPreview {
+                                        Button {
+                                            showPreview = true
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "eye")
+                                                Text("Preview")
+                                            }
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 14)
+                                            .background(CollectorTheme.surfaceBackground)
+                                            .foregroundStyle(CollectorTheme.textPrimary)
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        }
+                                        .disabled(urlText.isEmpty)
+                                    } else {
+                                        Button {
+                                            onSave(urlText)
+                                            dismiss()
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                Text("Use This Image")
+                                            }
+                                            .font(.headline)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 16)
+                                            .foregroundStyle(.white)
+                                            .background(CollectorTheme.statusHave)
+                                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                                        }
+                                    }
                                 }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(CollectorTheme.surfaceBackground)
-                                .foregroundStyle(CollectorTheme.textPrimary)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .padding(.horizontal)
                             }
-                            .disabled(urlText.isEmpty)
-                        } else {
-                            Button {
-                                onSave(urlText)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                    Text("Use This Image")
+                            
+                            Spacer(minLength: 24)
+                            
+                            // Quick links
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("OPEN IN SAFARI")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(CollectorTheme.textSecondary)
+                                
+                                HStack(spacing: 12) {
+                                    QuickLinkButton(name: "AF411", color: .orange) {
+                                        openURL("https://www.actionfigure411.com/?s=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+                                    }
+                                    QuickLinkButton(name: "McF", color: .green) {
+                                        openURL("https://mcfarlane.com/search/?q=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
+                                    }
+                                    QuickLinkButton(name: "Google", color: .red) {
+                                        openURL("https://www.google.com/search?tbm=isch&q=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")+action+figure")
+                                    }
                                 }
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .foregroundStyle(.white)
-                                .background(CollectorTheme.statusHave)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(CollectorTheme.cardBackground)
                         }
+                        .padding(.top)
                     }
-                    .padding(.horizontal)
-                    
-                    Spacer()
-                    
-                    // Quick links
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("OPEN IN SAFARI")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(CollectorTheme.textSecondary)
-                        
-                        HStack(spacing: 12) {
-                            QuickLinkButton(name: "AF411", color: .orange) {
-                                openURL("https://www.actionfigure411.com/?s=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
-                            }
-                            QuickLinkButton(name: "McF", color: .green) {
-                                openURL("https://mcfarlane.com/search/?q=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")
-                            }
-                            QuickLinkButton(name: "Google", color: .red) {
-                                openURL("https://www.google.com/search?tbm=isch&q=\(figure.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")+action+figure")
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(CollectorTheme.cardBackground)
                 }
-                .padding(.top)
             }
             .navigationTitle("Manual Entry")
             .navigationBarTitleDisplayMode(.inline)
@@ -859,6 +956,55 @@ struct ManualURLSheet: View {
                         dismiss()
                     }
                     .foregroundStyle(CollectorTheme.textSecondary)
+                }
+            }
+        }
+    }
+    
+    private func fetchMcFarlaneProductImages() {
+        guard let base = URL(string: apiBaseURL),
+              var components = URLComponents(url: base.appendingPathComponent("api/mcfarlane-product"), resolvingAgainstBaseURL: false) else {
+            mcfarlaneError = "Invalid URL"
+            return
+        }
+        components.queryItems = [URLQueryItem(name: "url", value: urlText)]
+        guard let url = components.url else {
+            mcfarlaneError = "Invalid URL"
+            return
+        }
+        mcfarlaneLoading = true
+        mcfarlaneError = nil
+        mcfarlaneImages = []
+        mcfarlaneTitle = ""
+        
+        Task {
+            do {
+                let (data, response) = try await URLSession.shared.data(from: url)
+                guard let http = response as? HTTPURLResponse else { return }
+                await MainActor.run {
+                    mcfarlaneLoading = false
+                    if http.statusCode == 200 {
+                        if let decoded = try? JSONDecoder().decode(McFarlaneProductResponse.self, from: data) {
+                            mcfarlaneTitle = decoded.title
+                            mcfarlaneImages = decoded.images
+                            if decoded.images.isEmpty {
+                                mcfarlaneError = "No images found on this page. The carousel may load via JavaScript."
+                            }
+                        } else {
+                            mcfarlaneError = "Could not read response"
+                        }
+                    } else {
+                        mcfarlaneError = "Server returned \(http.statusCode)"
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    mcfarlaneLoading = false
+                    if (error as NSError).code == -1004 {
+                        mcfarlaneError = "Cannot connect to image server. Is it running?"
+                    } else {
+                        mcfarlaneError = error.localizedDescription
+                    }
                 }
             }
         }
