@@ -487,6 +487,13 @@ def main():
     # Combine: new DC figures + other existing figures
     all_figures = figures + other_figures
     
+    # App expects Int id and isCollected (Bool). Normalize so decode never fails.
+    for i, fig in enumerate(all_figures):
+        fig['id'] = i + 1
+        # status "want" / "have" -> isCollected bool
+        status = fig.get('status', '')
+        fig['isCollected'] = status in ('have', 'I Have It!') or fig.get('isCollected', False)
+    
     print(f"\nTotal figures to save: {len(all_figures)}")
     
     # Save
