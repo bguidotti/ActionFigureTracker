@@ -83,6 +83,9 @@ def scrape_checklist_for_figures() -> Dict[str, Dict]:
     
     figures = {}
     for full_path, slug, fig_id, name in matches:
+        # McFarlane only: skip Mattel (blue box 2016–2019)
+        if '/mattel/' in full_path.lower():
+            continue
         # Clean up name
         name = name.strip()
         name = re.sub(r'&amp;', '&', name)
@@ -144,6 +147,9 @@ def scrape_visual_guide() -> Dict[str, Dict]:
         
         page_figures = 0
         for full_path, slug, fig_id in matches:
+            # McFarlane only: skip Mattel (blue box 2016–2019)
+            if '/mattel/' in full_path.lower():
+                continue
             # Construct name from slug
             name = slug.replace('-', ' ').title()
             
@@ -293,7 +299,9 @@ def main():
     
     # Merge both sources (checklist has better name matching, visual guide has more entries)
     scraped = {**visual_guide_figures, **checklist_figures}  # checklist overwrites
-    log(f"\nTotal scraped figures from both sources: {len(scraped)}")
+    # McFarlane only: drop any Mattel (blue box) entries that slipped in
+    scraped = {k: v for k, v in scraped.items() if '/mattel/' not in (v.get('page_url') or '').lower()}
+    log(f"\nTotal scraped figures (McFarlane only): {len(scraped)}")
     
     # Save scraped data for reference
     scraped_file = os.path.join(OUTPUT_DIR, 'all_scraped_figures.json')
