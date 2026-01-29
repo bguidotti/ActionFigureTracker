@@ -208,49 +208,51 @@ def search_actionfigure411(query: str, line: str = None) -> list:
         logger.warning("No figures in cache, attempting direct fetch")
         return []
     
-    # Normalize query for matching
-    query_lower = query.lower()
+    # Normalize query for matching - use user's exact terms (e.g. "Mirror Master Platinum")
+    query_lower = query.lower().strip()
     query_words = set(re.findall(r'\w+', query_lower))
+    # Exclude common filler so we count meaningful terms
+    query_words -= {'dc', 'multiverse', 'the', 'of', 'and', 'a', 'an', 'mcfarlane', 'page', 'punchers'}
     
     for fig in all_figures:
         title = fig.get('title', '').lower()
-        
-        # Direct substring match
-        if query_lower in title:
-            results.append(fig)
-            continue
-        
-        # Word overlap match
         title_words = set(re.findall(r'\w+', title))
-        common_words = query_words & title_words
-        # Exclude common filler words
-        common_words -= {'dc', 'multiverse', 'the', 'of', 'and', 'a', 'an', 'mcfarlane', 'page', 'punchers'}
+        common = query_words & title_words
+        match_count = len(common)
         
-        if len(common_words) >= 2:
+        # Include if full query is substring, or any of the user's terms match
+        full_substring = query_lower in title
+        if full_substring or match_count >= 1:
+            fig['_match_count'] = len(query_words) if full_substring else match_count
+            fig['_full_match'] = full_substring
             results.append(fig)
             continue
         
-        # Fuzzy match on the main character name
-        # Extract character name (first part before parentheses)
+        # Fuzzy match on the main character name (for short queries)
         char_name = re.split(r'\s*[\(\-]', title)[0].strip()
         query_char = re.split(r'\s*[\(\-]', query_lower)[0].strip()
-        
-        if char_name and query_char:
+        if char_name and query_char and len(query_words) <= 2:
             ratio = SequenceMatcher(None, query_char, char_name).ratio()
             if ratio > 0.7:
+                fig['_match_count'] = 1
+                fig['_full_match'] = False
                 results.append(fig)
     
-    # Sort by relevance (matching line first, then exact matches)
+    # Sort by: line priority, then most matching terms first, then full substring on top
     def relevance_score(fig):
-        priority = fig.get('_priority', 1)  # 0 = matching line, 1 = other
-        title = fig.get('title', '').lower()
-        exact_match = 0 if query_lower in title else 1
-        # Remove the internal priority field before returning
-        if '_priority' in fig:
-            del fig['_priority']
-        return (priority, exact_match)
+        priority = fig.get('_priority', 1)
+        match_count = fig.get('_match_count', 0)
+        full_match = fig.get('_full_match', False)
+        # Higher match_count first, full substring beats same count
+        return (priority, -match_count, 0 if full_match else 1)
     
     results.sort(key=relevance_score)
+    
+    # Remove internal fields before returning
+    for fig in results:
+        fig.pop('_priority', None)
+        fig.pop('_match_count', None)
+        fig.pop('_full_match', None)
     
     return results[:30]  # Limit to 30 results
 
