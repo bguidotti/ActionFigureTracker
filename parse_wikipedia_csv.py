@@ -267,8 +267,9 @@ def main():
             if col_b.lower() in ['figure', 'release', 'name']:
                 continue
             
-            # Handle Page Punchers format: Wave, Release, Figure, Accessories, Description
-            if page_punchers_format and current_series == "dc-page-punchers":
+            # Handle Page Punchers format: Wave, Release, Figure, Accessories, Description (5 cols)
+            # If CSV only has 4 columns (Release, Figure, Accessories, Description), use regular 4-col logic below
+            if page_punchers_format and current_series == "dc-page-punchers" and len(row) >= 5:
                 # Pad to at least 5 columns
                 while len(row) < 5:
                     row.append('')
@@ -442,6 +443,35 @@ def main():
     
     print(f"\nParsed {len(figures)} figures total")
     
+    # Load existing JSON early so we can preserve imageString and isCollected for DC figures
+    print(f"Loading existing JSON from {JSON_FILE} (for merge)...")
+    try:
+        with open(JSON_FILE, 'r', encoding='utf-8') as f:
+            existing = json.load(f)
+        existing_dc = [f for f in existing if f.get('series') in ['dc-multiverse', 'dc-page-punchers']]
+        # Lookup by (name, series) to preserve imageString and isCollected
+        existing_dc_lookup = {}
+        for f in existing_dc:
+            key = (f.get('name', '').strip(), f.get('series', ''))
+            if key not in existing_dc_lookup:
+                existing_dc_lookup[key] = {
+                    'imageString': f.get('imageString') or '',
+                    'isCollected': f.get('isCollected', False),
+                }
+        print(f"  Found {len(existing_dc_lookup)} existing DC figures to merge image/status")
+    except Exception as e:
+        existing_dc_lookup = {}
+        print(f"  Could not load existing JSON: {e}")
+    
+    # Preserve imageString and isCollected for DC figures when names match
+    for fig in figures:
+        key = (fig.get('name', '').strip(), fig.get('series', ''))
+        if key in existing_dc_lookup:
+            prev = existing_dc_lookup[key]
+            fig['imageString'] = prev['imageString'] or fig.get('imageString', '')
+            fig['isCollected'] = prev['isCollected']
+            fig['status'] = 'have' if prev['isCollected'] else 'want'
+    
     # Count by series
     series_counts = {}
     for f in figures:
@@ -476,7 +506,7 @@ def main():
         with open(JSON_FILE, 'r', encoding='utf-8') as f:
             existing = json.load(f)
         print(f"  Loaded {len(existing)} existing figures")
-    except:
+    except Exception:
         existing = []
         print("  No existing file or error loading")
     

@@ -27,6 +27,7 @@ WIKI_API = "https://en.wikipedia.org/w/api.php"
 PAGE_TITLE = "DC_Multiverse_(toy_line)"
 OUTPUT_CSV = "wikipedia_list.csv"
 SECTION_ANCHOR = "McFarlane_figures_(2020–present)"
+SECTION_ANCHOR_PAGE_PUNCHERS = "McFarlane_figures_-_DC_Page_Punchers"
 
 # Category hierarchy: (heading_level, name). Dash in user list = subcategory of previous.
 # We map wiki === to level 2, ==== to level 3, etc.
@@ -385,6 +386,16 @@ def main():
     print("Extracting McFarlane section...")
     section = extract_section(wikitext, SECTION_ANCHOR)
     print(f"  Section length: {len(section)} chars")
+
+    # Also extract DC Page Punchers (level-2 section after McFarlane 2020, so it was excluded above)
+    try:
+        section_pp = extract_section(wikitext, SECTION_ANCHOR_PAGE_PUNCHERS)
+        # extract_section returns content after the heading; prepend heading so parser sets current_series
+        section_pp_full = "== McFarlane figures - DC Page Punchers ==\n" + section_pp
+        section = section + "\n\n" + section_pp_full
+        print(f"  Added DC Page Punchers section: {len(section_pp)} chars")
+    except ValueError as e:
+        print(f"  DC Page Punchers section not found: {e}")
 
     # Find all subsection headings and tables
     lines = section.split("\n")
