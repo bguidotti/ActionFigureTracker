@@ -947,7 +947,6 @@ struct ManualURLSheet: View {
                     }
                 }
             }
-            }
             .navigationTitle("Manual Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -959,7 +958,6 @@ struct ManualURLSheet: View {
                 }
             }
         }
-    }
     
     private func fetchMcFarlaneProductImages() {
         guard let base = URL(string: apiBaseURL),
