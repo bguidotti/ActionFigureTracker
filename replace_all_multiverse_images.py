@@ -250,6 +250,20 @@ def slug_from_image_url(image_url: str) -> str:
     return (m.group(1) or '').lower()
 
 
+def _character_spec_from_name(figure_name: str) -> Optional[str]:
+    """Extract first parenthetical (e.g. 'Jessica Cruz', 'Hal Jordan') for disambiguating Green Lantern, Flash, etc."""
+    m = re.search(r'\(\s*([^)]+)\s*\)', figure_name)
+    if not m:
+        return None
+    spec = m.group(1).strip().lower()
+    # Skip if it's a version/edition, not a character name
+    if any(spec.startswith(x) for x in ('dc rebirth', 'justice league', 'version', 'variant', 'chase', 'gold label', 'redeco', 'retool')):
+        return None
+    if len(spec) < 3 or spec.isdigit():
+        return None
+    return re.sub(r'[^a-z0-9\s]', '', spec).strip() or None
+
+
 def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
     """Find the best matching figure from scraped data"""
     normalized = normalize_name(figure_name)
@@ -260,6 +274,9 @@ def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
     
     # Extract the base character name (before first parenthesis)
     base_name = re.split(r'\s*[\(\-]', figure_name)[0].strip().lower()
+    base_slug = re.sub(r'[^a-z0-9\s]', '', base_name)
+    base_slug = re.sub(r'\s+', '-', base_slug.strip())
+    character_spec = _character_spec_from_name(figure_name)  # e.g. "jessica cruz", "hal jordan"
     
     # Try matching by slug
     slug_from_name = figure_name.lower()
@@ -271,17 +288,36 @@ def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
         if data['slug'] == slug_from_name:
             return data
     
-    # Try matching base name to slug (require slug to start with base_slug so "flash" doesn't match "batman-flashpoint")
-    base_slug = re.sub(r'[^a-z0-9\s]', '', base_name)
-    base_slug = re.sub(r'\s+', '-', base_slug.strip())
+    # If we have a character spec (e.g. Jessica Cruz, Hal Jordan), try to find a scraped entry that contains it
+    # (e.g. "jessica-cruz-green-lantern" doesn't start with "green-lantern-" so we'd miss it in base_slug loop)
+    if character_spec:
+        spec_slug = character_spec.replace(' ', '-')
+        for key, data in scraped_figures.items():
+            slug = (data.get('slug') or '').lower()
+            name_lower = (data.get('name') or '').lower()
+            if spec_slug in slug or character_spec in name_lower:
+                if base_name in name_lower or base_slug in slug:
+                    return data
     
+    # Try matching base name to slug; if we have a character spec (e.g. Jessica Cruz, Hal Jordan), prefer scraped entries that contain it
+    candidates = []
     for key, data in scraped_figures.items():
         slug = data.get('slug', '')
+        name_lower = (data.get('name') or '').lower()
         if slug == base_slug or slug.startswith(base_slug + '-'):
-            return data
-        # Page Punchers often use "the-flash-...", "the-joker-...", etc.
-        if slug == 'the-' + base_slug or slug.startswith('the-' + base_slug + '-'):
-            return data
+            candidates.append(data)
+        elif slug == 'the-' + base_slug or slug.startswith('the-' + base_slug + '-'):
+            candidates.append(data)
+    
+    if candidates:
+        if character_spec:
+            spec_slug = character_spec.replace(' ', '-')
+            for data in candidates:
+                slug = (data.get('slug') or '').lower()
+                name_lower = (data.get('name') or '').lower()
+                if spec_slug in slug or character_spec in name_lower or spec_slug.replace('-', ' ') in name_lower:
+                    return data
+        return candidates[0]
     
     # Try fuzzy matching with lower threshold
     best_match = None
@@ -321,11 +357,20 @@ def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
     
     # Special handling for character variants - try to find any match for the character
     if not best_match and base_name:
-        # Look for any figure with the same base character name
+        char_candidates = []
         for key, data in scraped_figures.items():
             their_base = re.split(r'\s*[\(\-]', data['name'])[0].strip().lower()
             if base_name == their_base:
-                return data  # Return first match for this character
+                char_candidates.append(data)
+        if char_candidates:
+            if character_spec:
+                spec_slug = character_spec.replace(' ', '-')
+                for data in char_candidates:
+                    slug = (data.get('slug') or '').lower()
+                    name_lower = (data.get('name') or '').lower()
+                    if spec_slug in slug or character_spec in name_lower or spec_slug.replace('-', ' ') in name_lower:
+                        return data
+            return char_candidates[0]
     
     return best_match
 
@@ -363,6 +408,9 @@ def main():
         json.dump({"multiverse": scraped_multiverse, "page_punchers": scraped_page_punchers}, f, indent=2)
     log(f"Saved scraped data to {scraped_file}")
     
+    # Build set of Page Punchers image URLs so we can detect "wrong line" (Page Punchers figure with Multiverse image)
+    page_punchers_image_urls = {data.get('image_url') for data in scraped_page_punchers.values() if data.get('image_url')}
+    
     # Match and update ALL figures
     log("\n" + "="*60)
     log("Matching figures and updating image URLs...")
@@ -380,12 +428,16 @@ def main():
         base_slug = re.sub(r'\s+', '-', base_slug.strip())
         current_slug = slug_from_image_url(current_image)
         # Consider current image "wrong" if it's actionfigure411 but slug doesn't match our character (e.g. batman-flashpoint for a Flash figure)
-        current_is_wrong = (
-            current_slug
-            and (not base_slug or not (current_slug == base_slug or current_slug.startswith(base_slug + '-')))
+        slug_matches_character = base_slug and (
+            current_slug == base_slug or current_slug.startswith(base_slug + '-')
+            or current_slug == 'the-' + base_slug or current_slug.startswith('the-' + base_slug + '-')
         )
+        current_is_wrong = current_slug and not slug_matches_character
+        # Page Punchers figures must use Page Punchers images; Multiverse image on a Page Punchers figure is wrong
+        if figure.get('series') == 'dc-page-punchers' and current_image and 'actionfigure411.com' in current_image and current_image not in page_punchers_image_urls:
+            current_is_wrong = True
         
-        # Skip only if already using actionfigure411 and current image slug matches our base (correct)
+        # Skip only if already using actionfigure411 and current image is correct (right character and right line)
         if 'actionfigure411.com' in current_image and not current_is_wrong:
             already_411 += 1
             continue
