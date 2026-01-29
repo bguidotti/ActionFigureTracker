@@ -64,7 +64,6 @@
 		672788F32F26D40000B32C15 = {
 			isa = PBXGroup;
 			children = (
-				672789622F26DF0F00B32C15 /* DataLoader.swift */,
 				672789472F26D51400B32C15 /* README.md */,
 				672789482F26D51E00B32C15 /* ActionFigureTrackerApp.swift */,
 				672789492F26D51E00B32C15 /* Assets.xcassets */,
@@ -79,6 +78,7 @@
 			children = (
 				6727894A2F26D51E00B32C15 /* ActionFigure.swift */,
 				6727894B2F26D51E00B32C15 /* FigureDataStore.swift */,
+				672789622F26DF0F00B32C15 /* DataLoader.swift */,
 				6727894C2F26D51E00B32C15 /* MockData.swift */,
 				672789642F26E37600B32C15 /* all_figures.json */,
 				672789682F26E40100B32C15 /* iCloudPersistence.swift */,
