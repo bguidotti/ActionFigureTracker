@@ -21,6 +21,10 @@
 		672789612F26D51E00B32C15 /* FigureGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672789522F26D51E00B32C15 /* FigureGridView.swift */; };
 		672789632F26DF0F00B32C15 /* DataLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672789622F26DF0F00B32C15 /* DataLoader.swift */; };
 		672789652F26E37600B32C15 /* all_figures.json in Resources */ = {isa = PBXBuildFile; fileRef = 672789642F26E37600B32C15 /* all_figures.json */; };
+		672789672F26E40100B32C15 /* CollectorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672789662F26E40100B32C15 /* CollectorTheme.swift */; };
+		672789692F26E40100B32C15 /* iCloudPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672789682F26E40100B32C15 /* iCloudPersistence.swift */; };
+		6727896B2F26E40100B32C15 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6727896A2F26E40100B32C15 /* ImageCache.swift */; };
+		6727896D2F26E40100B32C15 /* ImageSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6727896C2F26E40100B32C15 /* ImageSearchView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +44,10 @@
 		672789542F26D51E00B32C15 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		672789622F26DF0F00B32C15 /* DataLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataLoader.swift; sourceTree = "<group>"; };
 		672789642F26E37600B32C15 /* all_figures.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = all_figures.json; sourceTree = "<group>"; };
+		672789662F26E40100B32C15 /* CollectorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectorTheme.swift; sourceTree = "<group>"; };
+		672789682F26E40100B32C15 /* iCloudPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iCloudPersistence.swift; sourceTree = "<group>"; };
+		6727896A2F26E40100B32C15 /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
+		6727896C2F26E40100B32C15 /* ImageSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSearchView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +69,7 @@
 				672789482F26D51E00B32C15 /* ActionFigureTrackerApp.swift */,
 				672789492F26D51E00B32C15 /* Assets.xcassets */,
 				6727894D2F26D51E00B32C15 /* Models */,
+				6727896E2F26E40100B32C15 /* Theme */,
 				672789552F26D51E00B32C15 /* Views */,
 			);
 			sourceTree = "<group>";
@@ -72,8 +81,18 @@
 				6727894B2F26D51E00B32C15 /* FigureDataStore.swift */,
 				6727894C2F26D51E00B32C15 /* MockData.swift */,
 				672789642F26E37600B32C15 /* all_figures.json */,
+				672789682F26E40100B32C15 /* iCloudPersistence.swift */,
+				6727896A2F26E40100B32C15 /* ImageCache.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		6727896E2F26E40100B32C15 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				672789662F26E40100B32C15 /* CollectorTheme.swift */,
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 		672789552F26D51E00B32C15 /* Views */ = {
@@ -85,6 +104,7 @@
 				672789512F26D51E00B32C15 /* FigureDetailView.swift */,
 				672789522F26D51E00B32C15 /* FigureGridView.swift */,
 				672789532F26D51E00B32C15 /* FilteredFigureView.swift */,
+				6727896C2F26E40100B32C15 /* ImageSearchView.swift */,
 				672789542F26D51E00B32C15 /* StatsView.swift */,
 			);
 			path = Views;
@@ -175,6 +195,10 @@
 				6727895F2F26D51E00B32C15 /* AddFigureView.swift in Sources */,
 				672789602F26D51E00B32C15 /* StatsView.swift in Sources */,
 				672789612F26D51E00B32C15 /* FigureGridView.swift in Sources */,
+				672789672F26E40100B32C15 /* CollectorTheme.swift in Sources */,
+				672789692F26E40100B32C15 /* iCloudPersistence.swift in Sources */,
+				6727896B2F26E40100B32C15 /* ImageCache.swift in Sources */,
+				6727896D2F26E40100B32C15 /* ImageSearchView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
