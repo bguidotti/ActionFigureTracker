@@ -2,6 +2,9 @@
 """
 Scrape DC Multiverse (toy line) from Wikipedia with correct rowspan/colspan handling.
 
+McFarlane only: we intentionally extract only the "McFarlane figures (2020–present)"
+section. The older "Mattel figures (2016–2019)" / blue box line is not scraped or included.
+
 Fetches wikitext via API, parses tables in "McFarlane figures (2020–present)" and
 subsections, expands merged cells, and outputs CSV compatible with parse_wikipedia_csv.py.
 
@@ -485,10 +488,21 @@ def main():
         for row in cleaned:
             writer.writerow(row)
 
-    # Validate: White Knight Joker and Batman both have description
+    # Validate: show sample rows so you can confirm both Batman and Superman have descriptions
+    white_knight_count = 0
+    superman_count = 0
     for i, row in enumerate(cleaned):
-        if len(row) >= 4 and "White Knight" in (row[3] or ""):
-            print(f"  Row {i}: Release={row[0]!r}, Figure={row[1]!r}, Desc={row[3]!r}")
+        if len(row) < 4:
+            continue
+        fig, desc = (row[1] or "").strip(), (row[3] or "")
+        if "White Knight" in desc:
+            print(f"  Row {i}: Release={row[0]!r}, Figure={fig!r}, Desc={desc[:60]!r}...")
+            white_knight_count += 1
+        elif fig.startswith("Superman") and desc:
+            if superman_count < 8:  # show first 8 Superman figure rows
+                print(f"  Row {i}: Release={row[0]!r}, Figure={fig!r}, Desc={desc[:60]!r}...")
+            superman_count += 1
+    print(f"  (White Knight rows: {white_knight_count}, Superman figure rows: {superman_count})")
     print("Done.")
 
 

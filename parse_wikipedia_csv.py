@@ -232,6 +232,11 @@ def main():
                 continue
             
             # Check for section headers
+            # Explicitly exclude Mattel (blue box 2016–2019) — only McFarlane wanted
+            if 'mattel' in col_a.lower() and 'mcfarlane' not in col_a.lower():
+                current_series = "_exclude_mattel"
+                continue
+            
             if 'page punchers' in col_a.lower():
                 current_series = "dc-page-punchers"
                 current_category = "Page Punchers"
@@ -311,11 +316,15 @@ def main():
                                 'imageString': '',
                                 'dateAdded': parse_wave_to_date(current_wave)
                             }
-                            figures.append(figure)
+                            if current_series != "_exclude_mattel":
+                                figures.append(figure)
                     continue
                 
-                # Create figure
-                full_name = create_figure_name(pp_figure, pp_description)
+                # Create figure: every row must have a disambiguating description (no bare character names)
+                pp_desc = pp_description or current_category or current_wave or (
+                    "DC Multiverse" if current_series in ("dc-multiverse", "dc-page-punchers") else "Figure"
+                )
+                full_name = create_figure_name(pp_figure, pp_desc)
                 
                 # Skip parsing artifacts
                 skip_keywords = ['art card', 'photo card', 'display stand and', 'accessories']
@@ -338,7 +347,8 @@ def main():
                     'imageString': '',
                     'dateAdded': parse_wave_to_date(current_wave)
                 }
-                figures.append(figure)
+                if current_series != "_exclude_mattel":
+                    figures.append(figure)
                 continue
             
             # Skip empty figure names (unless continuing from previous)
@@ -371,9 +381,13 @@ def main():
                     is_platinum = False
                 
                 acc_list = parse_accessories(col_c)
+                # Every figure must have a disambiguating description (no bare character names)
+                variant_desc = col_d or current_category or current_wave or (
+                    "DC Multiverse" if current_series in ("dc-multiverse", "dc-page-punchers") else "Figure"
+                )
                 figure = {
                     'id': str(uuid.uuid4()),
-                    'name': variant_name if not col_b else create_figure_name(col_b, col_d),
+                    'name': variant_name if not col_b else create_figure_name(col_b, variant_desc),
                     'series': current_series,
                     'wave': current_wave,
                     'category': current_category,
@@ -386,12 +400,16 @@ def main():
                     'imageString': '',
                     'dateAdded': parse_wave_to_date(current_wave)
                 }
-                figures.append(figure)
+                if current_series != "_exclude_mattel":
+                    figures.append(figure)
                 continue
             
-            # Regular figure entry
-            full_name = create_figure_name(col_b, col_d)
-            is_platinum = 'platinum' in col_d.lower() if col_d else False
+            # Regular figure entry: every row must have a disambiguating description (no bare character names)
+            description_for_name = col_d or current_category or current_wave or (
+                "DC Multiverse" if current_series in ("dc-multiverse", "dc-page-punchers") else "Figure"
+            )
+            full_name = create_figure_name(col_b, description_for_name)
+            is_platinum = 'platinum' in (col_d or '').lower() if col_d else False
             
             # Skip entries that are clearly not figure names (parsing artifacts)
             skip_keywords = [
@@ -419,7 +437,8 @@ def main():
                 'imageString': '',
                 'dateAdded': parse_wave_to_date(current_wave)
             }
-            figures.append(figure)
+            if current_series != "_exclude_mattel":
+                figures.append(figure)
     
     print(f"\nParsed {len(figures)} figures total")
     
