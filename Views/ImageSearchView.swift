@@ -958,6 +958,7 @@ struct ManualURLSheet: View {
                 }
             }
         }
+    }
     
     private func fetchMcFarlaneProductImages() {
         guard let base = URL(string: apiBaseURL),
