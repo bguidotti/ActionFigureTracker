@@ -948,6 +948,7 @@ struct ManualURLSheet: View {
                     }
                 }
             }
+            }
             .navigationTitle("Manual Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
