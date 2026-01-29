@@ -202,6 +202,14 @@ def fuzzy_match(name1: str, name2: str) -> float:
     return SequenceMatcher(None, normalize_name(name1), normalize_name(name2)).ratio()
 
 
+def slug_from_image_url(image_url: str) -> str:
+    """Extract slug from actionfigure411 image URL (e.g. .../slug-1234.jpg -> slug)."""
+    if not image_url or 'actionfigure411.com' not in image_url:
+        return ''
+    m = re.search(r'/([a-z0-9-]+)-\d+\.(?:jpg|png|webp)', image_url, re.IGNORECASE)
+    return (m.group(1) or '').lower()
+
+
 def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
     """Find the best matching figure from scraped data"""
     normalized = normalize_name(figure_name)
@@ -223,12 +231,13 @@ def find_best_match(figure_name: str, scraped_figures: Dict) -> Optional[Dict]:
         if data['slug'] == slug_from_name:
             return data
     
-    # Try matching base name to slug
+    # Try matching base name to slug (require slug to start with base_slug so "flash" doesn't match "batman-flashpoint")
     base_slug = re.sub(r'[^a-z0-9\s]', '', base_name)
     base_slug = re.sub(r'\s+', '-', base_slug.strip())
     
     for key, data in scraped_figures.items():
-        if data['slug'].startswith(base_slug) or base_slug in data['slug']:
+        slug = data.get('slug', '')
+        if slug == base_slug or slug.startswith(base_slug + '-'):
             return data
     
     # Try fuzzy matching with lower threshold
@@ -321,9 +330,18 @@ def main():
     for i, figure in enumerate(multiverse_figures):
         name = figure['name']
         current_image = figure.get('imageString', '')
+        base_name = re.split(r'\s*[\(\-]', name)[0].strip().lower()
+        base_slug = re.sub(r'[^a-z0-9\s]', '', base_name)
+        base_slug = re.sub(r'\s+', '-', base_slug.strip())
+        current_slug = slug_from_image_url(current_image)
+        # Consider current image "wrong" if it's actionfigure411 but slug doesn't match our character (e.g. batman-flashpoint for a Flash figure)
+        current_is_wrong = (
+            current_slug
+            and (not base_slug or not (current_slug == base_slug or current_slug.startswith(base_slug + '-')))
+        )
         
-        # Check if already using actionfigure411
-        if 'actionfigure411.com' in current_image:
+        # Skip only if already using actionfigure411 and current image slug matches our base (correct)
+        if 'actionfigure411.com' in current_image and not current_is_wrong:
             already_411 += 1
             continue
         
@@ -335,10 +353,10 @@ def main():
             
             # Verify the image exists
             if check_image_exists(image_url):
-                old_source = "legendsverse" if "legendsverse" in current_image else ("none" if not current_image else "other")
+                old_source = "wrong_match" if current_is_wrong else ("legendsverse" if "legendsverse" in current_image else ("none" if not current_image else "other"))
                 figure['imageString'] = image_url
                 updated += 1
-                if updated <= 50 or updated % 100 == 0:  # Show first 50 and then every 100th
+                if updated <= 50 or updated % 100 == 0 or current_is_wrong:  # Show first 50, every 100th, and every wrong-match fix
                     log(f"[{updated}] {name}")
                     log(f"    {old_source} -> actionfigure411")
             else:
